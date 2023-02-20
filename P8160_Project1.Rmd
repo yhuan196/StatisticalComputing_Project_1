@@ -1,0 +1,148 @@
+---
+title: "P8160_Project1_Survival"
+author: "Yi Huang, yh3554"
+date: "2023-02-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(simsurv)
+library(survival)
+library(tidyverse)
+```
+
+
+# Generate data (Exponential)
+
+```{r}
+set.seed(2023)
+# tot number of patients
+N <- 1000
+#define covariates
+covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1L, 0.5))
+
+exp_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, x = covs, betas = c(trt = -0.5), maxt = 5)
+
+```
+
+# Generate data (Weibull)
+
+```{r}
+set.seed(2023)
+# tot number of patients
+N <- 1000
+#define covariates
+covs <- data.frame(id <- 1:N, trt <- stats::rbinom(N, 1L, 0.5))
+
+weibull_dist <- simsurv(dist <- "weibull", lambdas <- 0.1, gammas <- 0.05, x <- covs, betas <- c(trt <- -0.5), maxt <- 5)
+```
+
+# Generate data (Gompertz)
+
+```{r}
+set.seed(2023)
+# tot number of patients
+N <- 1000
+#define covariates
+covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1L, 0.5))
+
+gompertz_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, x = covs, betas = c(trt = -0.5), maxt = 5)
+
+
+```
+
+#### generate gompertz distribution function
+```{r}
+generate_gompertz = function(gamma, N, seed){
+  set.seed(seed)
+  #sim gompertz data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1L, 0.5),
+                    gender = c(rep(0, N/2), rep(1, N/2)))
+  dat <- simsurv(dist = "gompertz",
+                 lambdas = 0.1, 
+                 gammas = gamma, 
+                 betas = c(trt = -0.5), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  return(dat)
+}
+gompertz_dat <- generate_gompertz(0.05, 1000, 2023)
+
+# fit Exponential
+fit.exponential <- survreg(Surv(gompertz_dat$eventtime) ~ gompertz_dat$status + gompertz_dat$gender, data = gompertz_dat, dist = "exponential") 
+summary(fit.exponential)
+-fit.exponential$coefficients[-1]
+
+# fit Weibull
+fit.weibull <- survreg(Surv(gompertz_dat$eventtime) ~ gompertz_dat$status + gompertz_dat$gender, data = gompertz_dat, dist = "weibull") 
+summary(fit.weibull)
+-fit.weibull$coefficients[-1] / fit.weibull$scale
+
+#fit Cox model
+fit.cox <- coxph(Surv(gompertz_dat$eventtime) ~ gompertz_dat$status + gompertz_dat$gender, data = gompertz_dat) 
+summary(fit.cox)
+
+
+```
+
+
+
+# Simulation for Gompertz
+
+```{r}
+sim_gompertz = function(gamma, N, seed){
+  set.seed(seed)
+  #sim gompertz data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(n, 1L, 0.5))
+  dat <- simsurv(dist = "gompertz",
+                 lambdas = 0.1, 
+                 gammas = gamma, 
+                 betas = c(trt = -0.5), 
+                 x = covs, 
+                 maxt = 5)
+  
+  #fit models
+  fit.exponential <- tidy(survreg(Surv(dat$eventtime, dat$status) ~ dat$trt, dist = "exponential"))
+  fit.weibull <- survreg(Surv(dat$eventtime, dat$status) ~ dat$trt, dist = "weibull")
+  fit.cox <- tidy(coxph(Surv(dat$eventtime, dat$status) ~ dat$trt))
+  
+  #extract beta
+  result = tibble(exp_beta = c(-fit.exponential$estimate[2]), 
+                  weibull_beta = c(-fit.weibull$coefficients[2])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$estimate), 
+                  dist = "gompertz",
+                  gamma = gamma, 
+                  N = N)
+  return(result)
+}
+
+sim_gompertz(gamma=0.05, N=1000, seed=2023)
+```
+
+# result
+```{r}
+#gamma=0.05
+results0 = map_dfr(.x = c(rep(0.05, 1000)), 
+        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
+write.csv(results0,"results_gamma0.05.csv")
+#gamma=1
+results1 = map_dfr(.x = c(rep(1, 1000)), 
+        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
+write.csv(results1,"results_gamma1.csv")
+#gamma=2
+results2 = map_dfr(.x = c(rep(2, 1000)), 
+        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
+write.csv(results2,"results_gamma2.csv")
+#gamma=3
+results3 = map_dfr(.x = c(rep(3, 1000)), 
+        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
+write.csv(results3,"results_gamma3.csv")
+```
+
+
+
+
