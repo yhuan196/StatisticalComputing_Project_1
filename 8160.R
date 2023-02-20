@@ -50,23 +50,23 @@ simulate = function(sim, n, b1, dist = "exponential") {
  
     
     for (i in 1:sim) {
-      # Generate data
+      
       data = simdata(n, distribution = dist,b1, 
                            lambda = 0.5, gamma = 2)
-      # Fit three survival distributions
+      
       fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
                                 dist = "exponential") 
       fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
                             dist = "weibull")
       
-      # Save beta coefficients 
+       
       exp_beta[i] = -fit.exponential$coefficients[-1]
       weibull_beta[i] = -fit.weibull$coefficients[-1] / fit.weibull$scale
       
     }
     
    
-  # Store beta coefficients
+  
   coef = tibble(exp = exp_beta,
                 weibull = weibull_beta,
                 ) }
