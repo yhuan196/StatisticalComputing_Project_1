@@ -1,0 +1,20 @@
+---
+title: "8160 project 1"
+author: "Ruihan Zhang"
+date: "2023-02-18"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = F,message = F)
+require(survival)
+library(broom)
+library(tidyverse)
+library(patchwork)
+library(simsurv)
+```
+```{r}
+n=100
+
+```
+
