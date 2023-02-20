@@ -1,0 +1,41 @@
+---
+title: "p8160 project1"
+author: "Ruihan Zhang"
+date: "2023-02-19"
+output: html_document
+---
+
+```{r}
+library(simsurv)
+library(survival)
+
+```
+
+```{r}
+
+set.seed(2023)
+
+n <- 1000
+x <- rbinom(n, 1, 0.5)
+t <- rexp(n, rate = ifelse(x == 1, 0.02, 0.04))
+dat <- data.frame(time = t, status = 1, x = factor(x, levels = c(0, 1), labels = c("control", "treatment")))
+
+# Fit exponential proportional hazard model
+fit <- coxph(Surv(time, status) ~ x, data = dat)
+
+# Estimate survival function
+surv <- survfit(fit, newdata = dat)
+
+# Calculate squared differences between estimated and true survival function
+t_seq <- seq(0, max(dat$time), length.out = 100)
+s_true <- pexp(t_seq, rate = 0.04)  # True survival function for control group
+s_est <- summary(surv)$surv  # Estimated survival function for control group
+squared_diff <- (s_est - s_true)^2
+
+# Calculate MSE
+mse <- mean(squared_diff)
+mse
+```
+
+
+
