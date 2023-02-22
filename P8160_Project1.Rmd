@@ -39,7 +39,29 @@ gompertz_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05,
                          x = covs, betas = c(trt = -0.5), maxt = 5)
 ```
 
-#### Generate multiple Gompertz distribution data
+#### Generate Gompertz distribution use inverse transformation method
+```{r}
+gen_gompertz <- function(alpha, lambda, b1, n, seed) {
+  # Generate a random sample from the uniform distribution
+  set.seed(seed)
+  u <- runif(n)
+  x <- rep(0, n)
+  x <- ( 1/alpha)*log(1-(alpha*log(u)/(lambda*exp(x*b1)))) 
+
+  return(x)
+}
+
+sample_gompertz <- gen_gompertz(0.5, 0.5, 1000, 123123)
+df <- data.frame(sample_gompertz)
+
+# Visualization to validate the algorithm
+ df %>% ggplot(aes(x = sample_gompertz)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 colour = 1, fill = "red", bins = 30) +
+  geom_density() + xlab("x") + ggtitle("Density Distribution")
+```
+
+#### Generate multiple Gompertz distribution using simsurv package
 ```{r}
 generate_gompertz = function(gamma, N, seed){
   set.seed(seed)
@@ -65,7 +87,12 @@ eventtime %>% ggplot(aes(x = gompertz_dat.eventtime)) +
   geom_histogram(aes(y = after_stat(density)),
                  colour = 1, fill = "red", bins = 30) +
   geom_density() + xlab("x") + ggtitle("Density Distribution")
+```
 
+
+
+#### fit model
+```{r}
 # fit Exponential
 fit.exponential <- survreg(Surv(gompertz_dat$eventtime) ~ gompertz_dat$status + gompertz_dat$gender, data = gompertz_dat, dist = "exponential") 
 summary(fit.exponential)
@@ -82,6 +109,12 @@ summary(fit.cox)
 
 
 ```
+
+# Shape of Survival Function
+```{r}
+
+```
+
 
 
 
