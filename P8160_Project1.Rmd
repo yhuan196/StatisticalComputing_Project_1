@@ -25,12 +25,12 @@ N <- 1000
 covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1L, 0.5))
 
 ## Exponential
-exp_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, 
+exp_dist <- simsurv(dist = "gompertz", lambdas = 0.5, gammas = 0.05, 
                     x = covs, betas = c(trt = -0.5), maxt = 5)
 
 
 ## Weibull
-weibull_dist <- simsurv(dist <- "weibull", lambdas = 0.1, gammas = 0.05, 
+weibull_dist <- simsurv(dist <- "weibull", lambdas = 0.5, gammas = 0.05, 
                         x = covs, betas = c(trt = -0.5), maxt = 5)
 
 
@@ -48,7 +48,7 @@ generate_gompertz = function(gamma, N, seed){
                     trt = stats::rbinom(N, 1L, 0.5),
                     gender = c(rep(0, N/2), rep(1, N/2)))
   dat <- simsurv(dist = "gompertz",
-                 lambdas = 0.1, 
+                 lambdas = 0.5, 
                  gammas = gamma, 
                  betas = c(trt = -0.5), 
                  x = covs, 
@@ -94,7 +94,7 @@ sim_gompertz = function(gamma, N, seed){
   covs <- data.frame(id = 1:N,
                     trt = stats::rbinom(n, 1L, 0.5))
   dat <- simsurv(dist = "gompertz",
-                 lambdas = 0.1, 
+                 lambdas = 0.5, 
                  gammas = gamma, 
                  betas = c(trt = -0.5), 
                  x = covs, 
