@@ -1,6 +1,19 @@
+---
+title: "c"
+output: html_document
+date: "2023-02-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
 library(survival)
 library(tidyverse)
-library(fastmap)
+```
+
+```{r}
 set.seed(2023)
 simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
   exponential = function(u, x, lambda, b1) {
@@ -32,6 +45,10 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
                              event=e)
 }
 
+```
+
+
+```{r}
 
 set.seed(2023)
 simulate = function(sim, n, b1, dist = "weibull") {
@@ -74,12 +91,13 @@ simulate = function(sim, n, b1, dist = "weibull") {
   
   results = list(coef, char)
   names(results) = c("coefficients", "performance")
-  #return(results)
-  return(coef)
+  return(results)
+  #return(coef)
   
   }
-  
+```
 
+```{r}
 set.seed(2023)
 sim_results = 
   tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
@@ -88,6 +106,20 @@ sim_results =
                                                         dist = "weibull")$performance),
                 output = map(.x = output, ~mutate(.x)))
 
+temp1 = sim_results %>% unnest(output) 
+
+ggplot(temp1, aes(x = sample_size, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 1",
+       title="Data from Weibull distribution fits in 3 models") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+
+```
+
+```{r}
+set.seed(2023)
 fit_exp = function(df) {
   fit.exponential = survreg(Surv(time, event) ~ x, dist = "exponential", data = df)
   return(as.numeric(-fit.exponential$coefficients[-1]))
@@ -103,7 +135,7 @@ fit_cox = function(df) {
   return(as.numeric(fit.cox$coefficients))
 }
 
-set.seed(2023)
+
 sim_beta=expand.grid(sample_size=c(100,150,200,250,300,350,400),rep=1:1000) %>%
   mutate(data=map(.x=sample_size,~simdata(n = .x,distribution="weibull", b1=-0.5))) %>%
   mutate(
@@ -112,27 +144,18 @@ sim_beta=expand.grid(sample_size=c(100,150,200,250,300,350,400),rep=1:1000) %>%
     cox_beta = map_dbl(data, fit_cox)
   ) 
 
-set.seed(2023)
 sim_beta %>%ggplot()+geom_density(aes(x = exp_beta,col="red"), size = 0.7) +
   geom_density(aes(x = weibull_beta,col="blue"), size = 0.7) +
-  geom_density(aes(x = cox_beta,col="yellow"),size = 0.7)+
-  facet_grid(sample_size~.)+scale_color_manual(name="models",values=c("red"="red","yellow"="yellow","blue"="blue"),
-                                               labels=c("gompertz","exp","weibull"))+
+  geom_density(aes(x = cox_beta,col="orange"),size = 0.7)+
+  facet_grid(sample_size~.)+scale_color_manual(name="models",values=c("blue"="blue","red"="red","orange"="orange"),
+                                               labels=c("gompertz","weibull","exp"))+
   scale_x_continuous(breaks = c(-1, -0.5, 0), limits = c(-1.5, 0.5))
 
-
-temp1 = sim_results %>% unnest(output) 
-
-ggplot(temp1, aes(x = sample_size, y = var, color = model)) +
-  geom_point(size = 1) +
-  geom_line(size = 1) +
-  xlab("sample size") +
-  labs(caption = "Figure 1",
-       title="Data from Weibull distribution fits in 3 models") + 
-  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+```
 
 
-#confidence interval
+```{r}
+#ci 
 set.seed(2023)
 g1=simulate(sim=1000,n=400,b1=-0.5)
 g1
@@ -141,3 +164,5 @@ weibull1=t.test(g1$weibull,conf.level = 0.95)
 weibull1
 cox1=t.test(g1$gompertz,conf.level = 0.95)
 cox1
+```
+
