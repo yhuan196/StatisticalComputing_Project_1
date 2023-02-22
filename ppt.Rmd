@@ -1,14 +1,18 @@
 ---
 title: "P8160 Monte Carlo Simulation Design"
+subtitle: "Compare three Survival models"
 author: "Jingchen Chai, Yi Huang, Ruihan Zhang"
-date: "2023-02-22"
-output: 
-      powerpoint_presentation:
-      reference_doc: MailmanTemplate.pptx
+output:
+  powerpoint_presentation:
+    reference_doc: Mailman_Standard_Template.pptx
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+# install.packages('xaringan')
+if (packageVersion('rmarkdown') <= '1.9') {
+  install.packages('rmarkdown')  # update rmarkdown from CRAN
+}
 ```
 
 ## R Markdown
