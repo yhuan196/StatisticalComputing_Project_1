@@ -10,49 +10,58 @@ knitr::opts_chunk$set(echo = TRUE)
 library(simsurv)
 library(survival)
 library(tidyverse)
+library(ggplot2)
 ```
 
 
-# Generate data (Exponential)
+# Simsurv Package Data Generarion Examples
 
 ```{r}
 set.seed(2023)
 # tot number of patients
 N <- 1000
-#define covariates
+
+# define covariates
 covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1L, 0.5))
 
-exp_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, x = covs, betas = c(trt = -0.5), maxt = 5)
+## Exponential
+exp_dist <- simsurv(dist = "gompertz", lambdas = 0.5, gammas = 0.05, 
+                    x = covs, betas = c(trt = -0.5), maxt = 5)
 
+
+## Weibull
+weibull_dist <- simsurv(dist <- "weibull", lambdas = 0.5, gammas = 0.05, 
+                        x = covs, betas = c(trt = -0.5), maxt = 5)
+
+
+## Gompertz
+gompertz_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, 
+                         x = covs, betas = c(trt = -0.5), maxt = 5)
 ```
 
-# Generate data (Weibull)
-
+#### Generate Gompertz distribution use inverse transformation method
 ```{r}
-set.seed(2023)
-# tot number of patients
-N <- 1000
-#define covariates
-covs <- data.frame(id <- 1:N, trt <- stats::rbinom(N, 1L, 0.5))
+gen_gompertz <- function(alpha, lambda, b1, n, seed) {
+  # Generate a random sample from the uniform distribution
+  set.seed(seed)
+  u <- runif(n)
+  x <- rep(0, n)
+  x <- ( 1/alpha)*log(1-(alpha*log(u)/(lambda*exp(x*b1)))) 
 
-weibull_dist <- simsurv(dist <- "weibull", lambdas <- 0.1, gammas <- 0.05, x <- covs, betas <- c(trt <- -0.5), maxt <- 5)
+  return(x)
+}
+
+sample_gompertz <- gen_gompertz(0.5, 0.5, 1000, 123123)
+df <- data.frame(sample_gompertz)
+
+# Visualization to validate the algorithm
+ df %>% ggplot(aes(x = sample_gompertz)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 colour = 1, fill = "red", bins = 30) +
+  geom_density() + xlab("x") + ggtitle("Density Distribution")
 ```
 
-# Generate data (Gompertz)
-
-```{r}
-set.seed(2023)
-# tot number of patients
-N <- 1000
-#define covariates
-covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1L, 0.5))
-
-gompertz_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, x = covs, betas = c(trt = -0.5), maxt = 5)
-
-
-```
-
-#### generate gompertz distribution function
+#### Generate multiple Gompertz distribution using simsurv package
 ```{r}
 generate_gompertz = function(gamma, N, seed){
   set.seed(seed)
@@ -61,7 +70,7 @@ generate_gompertz = function(gamma, N, seed){
                     trt = stats::rbinom(N, 1L, 0.5),
                     gender = c(rep(0, N/2), rep(1, N/2)))
   dat <- simsurv(dist = "gompertz",
-                 lambdas = 0.1, 
+                 lambdas = 0.5, 
                  gammas = gamma, 
                  betas = c(trt = -0.5), 
                  x = covs, 
@@ -69,8 +78,21 @@ generate_gompertz = function(gamma, N, seed){
   dat <- merge(covs, dat)
   return(dat)
 }
-gompertz_dat <- generate_gompertz(0.05, 1000, 2023)
+gompertz_dat <- generate_gompertz(1, 1000, 2023)
 
+eventtime <- data.frame(gompertz_dat$eventtime)
+
+# Visualization to validate the algorithm
+eventtime %>% ggplot(aes(x = gompertz_dat.eventtime)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 colour = 1, fill = "red", bins = 30) +
+  geom_density() + xlab("x") + ggtitle("Density Distribution")
+```
+
+
+
+#### fit model
+```{r}
 # fit Exponential
 fit.exponential <- survreg(Surv(gompertz_dat$eventtime) ~ gompertz_dat$status + gompertz_dat$gender, data = gompertz_dat, dist = "exponential") 
 summary(fit.exponential)
@@ -88,6 +110,12 @@ summary(fit.cox)
 
 ```
 
+# Shape of Survival Function
+```{r}
+
+```
+
+
 
 
 # Simulation for Gompertz
@@ -99,7 +127,7 @@ sim_gompertz = function(gamma, N, seed){
   covs <- data.frame(id = 1:N,
                     trt = stats::rbinom(n, 1L, 0.5))
   dat <- simsurv(dist = "gompertz",
-                 lambdas = 0.1, 
+                 lambdas = 0.5, 
                  gammas = gamma, 
                  betas = c(trt = -0.5), 
                  x = covs, 
@@ -137,10 +165,6 @@ write.csv(results1,"results_gamma1.csv")
 results2 = map_dfr(.x = c(rep(2, 1000)), 
         ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
 write.csv(results2,"results_gamma2.csv")
-#gamma=3
-results3 = map_dfr(.x = c(rep(3, 1000)), 
-        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
-write.csv(results3,"results_gamma3.csv")
 ```
 
 
