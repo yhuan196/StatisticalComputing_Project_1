@@ -153,10 +153,8 @@ sim_gompertz <- function(gamma, N, seed){
 }
 
 sim_gompertz(gamma = 0.05, N = 1000, seed = 2023)
-```
 
 # result
-```{r}
 #gamma=0.05
 results0 = map_dfr(.x = c(rep(0.05, 1000)), 
         ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
@@ -171,6 +169,42 @@ results2 = map_dfr(.x = c(rep(2, 1000)),
 write.csv(results2,"results_gamma2.csv")
 ```
 
+# Comparing the accuracy and efficiency of treatment effect (\beta)
+
+*k*: the number of independent data sets\
 
 
+#### Bias
 
+*Exponential Proportional-Hazards Model*: \
+$$Bias=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{exp}^{(k)}}-\beta_{1})=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{exp}^{(k)}}-0.5)$$\
+
+*Weibull Proportional-Hazards Model*: \
+$$Bias=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{weibull}^{(k)}}-\beta_{1})=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{weibull}^{(k)}}-0.5)$$\
+
+*Cox Proportional-Hazards Model*: \
+$$Bias=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-\beta_{1})=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-0.5)$$\
+
+
+#### Variance
+
+*Exponential Proportional-Hazards Model*: \
+$$Variance= \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta_{exp}^{(k)}}-\beta_{1})^2=\frac{1}{k-1}\sum_{i=1}^k\hat{(\beta_{exp}^{(k)}}-0.5)^2$$\
+
+*Weibull Proportional-Hazards Model*: \
+$$Variance= \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta_{weibull}^{(k)}}-\beta_{1})^2=\frac{1}{k-1}\sum_{i=1}^k\hat{(\beta_{weibull}^{(k)}}-0.5)^2$$\
+
+*Cox Proportional-Hazards Model*: \
+$$Variance= \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta_{cox}^{(k)}}-\beta_{1})^2=\frac{1}{k-1}\sum_{i=1}^k\hat{(\beta_{cox}^{(k)}}-0.5)^2$$\
+
+
+#### MSE
+
+*Exponential Proportional-Hazards Model*: \
+$$MSE= \frac{1}{k}\sum_{i=1}^k(\hat{\beta_{exp}^{(k)}}-\beta_{1})^2=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{exp}^{(k)}}-0.5)^2$$\
+
+*Weibull Proportional-Hazards Model*: \
+$$MSE= \frac{1}{k}\sum_{i=1}^k(\hat{\beta_{weibull}^{(k)}}-\beta_{1})^2=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{weibull}^{(k)}}-0.5)^2$$\
+
+*Cox Proportional-Hazards Model*: \
+$$MSE= \frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-\beta_{1})^2=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-0.5)^2$$\
