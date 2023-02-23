@@ -44,6 +44,7 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
                              x = x,
                              event=e)
 }
+#d1=simdata(50,"exponential",-0.5)%>%view()
 
 ```
 
@@ -51,7 +52,7 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
 ```{r}
 
 set.seed(2023)
-simulate = function(sim, n, b1, dist = "weibull") {
+simulate = function(sim, n, b1, dist = "exponential") {
   # Set up coefficient vectors
   exp_beta = rep(NA, sim)
   weibull_beta = rep(NA, sim)
@@ -62,13 +63,13 @@ simulate = function(sim, n, b1, dist = "weibull") {
     for (i in 1:sim) {
       
       data = simdata(n, distribution = dist,b1, 
-                           lambda = 0.5, gamma = 2)
+                           lambda = 0.5, gamma = 2,alpha=0.5)
       
-      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
+      fit.exponential = survreg(Surv(data$time, data$event) ~ data$x, 
                                 dist = "exponential") 
-      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
+      fit.weibull = survreg(Surv(data$time, data$event) ~ data$x, 
                             dist = "weibull")
-      fit.gompertz = coxph(Surv(data$t, data$event) ~ data$x)
+      fit.gompertz = coxph(Surv(data$time, data$event) ~ data$x)
       
        
       exp_beta[i] = -fit.exponential$coefficients[-1]
@@ -82,12 +83,15 @@ simulate = function(sim, n, b1, dist = "weibull") {
   coef = tibble(exp = exp_beta,
                 weibull = weibull_beta,
                 gompertz=gompertz_beta)
-  exp_var = var(exp_beta)
-  weibull_var = var(weibull_beta)
-  gompertz_var=var(gompertz_beta)
+  #exp_var = var(exp_beta)
+  #weibull_var = var(weibull_beta)
+  #gompertz_var=var(gompertz_beta)
+  exp_bias= mean(exp_beta-b1)
+  weibull_bias=mean(weibull_beta-b1)
+  gompertz_bias=mean(gompertz_beta-b1)
   
   char = tibble(model = c("exp", "weibull","gompertz"),
-                var=c(exp_var,weibull_var,gompertz_var))
+                bias=c(exp_bias,weibull_bias,gompertz_bias))
   
   results = list(coef, char)
   names(results) = c("coefficients", "performance")
@@ -97,18 +101,19 @@ simulate = function(sim, n, b1, dist = "weibull") {
   }
 ```
 
+
 ```{r}
 set.seed(2023)
 sim_results = 
   tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
   mutate(
-    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = -0.5, 
-                                                        dist = "weibull")$performance),
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 2, 
+                                                        dist = "exponential")$performance),
                 output = map(.x = output, ~mutate(.x)))
 
 temp1 = sim_results %>% unnest(output) 
 
-ggplot(temp1, aes(x = sample_size, y = var, color = model)) +
+ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
