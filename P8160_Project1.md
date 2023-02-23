@@ -28,14 +28,12 @@ weibull_dist <- simsurv(dist <- "weibull", lambdas = 0.5, gammas = 0.05,
 ## Gompertz
 gompertz_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, 
                          x = covs, betas = c(trt = -0.5), maxt = 5)
-
-## Mixture of 
 ```
 
 ## Generate Gompertz distribution use inverse transformation method
 
 ``` r
-gen_gompertz <- function(alpha, lambda, b1, n, seed) {
+gen_gompertz <- function(alpha = 0.5, lambda = 0.5, b1 = -0.5, n, seed) {
   # Generate a random sample from the uniform distribution
   set.seed(seed)
   u <- runif(n)
@@ -43,9 +41,10 @@ gen_gompertz <- function(alpha, lambda, b1, n, seed) {
   x <- (1/alpha)*log(1-(alpha*log(u)/(lambda*exp(x*b1)))) 
 
   return(x)
+  
 }
 
-sample_gompertz <- gen_gompertz(0.5, 0.5, 0.5, 1000, 123123)
+sample_gompertz <- gen_gompertz(n=1000, seed = 123123)
 df <- data.frame(sample_gompertz)
 
 # Visualization to validate the algorithm
@@ -62,7 +61,7 @@ df <- data.frame(sample_gompertz)
 ``` r
 generate_gompertz = function(gamma, N, seed){
   set.seed(seed)
-  #sim gompertz data
+  #gen gompertz data
   covs <- data.frame(id = 1:N,
                     trt = stats::rbinom(N, 1, 0.5))
   dat <- simsurv(dist = "gompertz",
@@ -176,12 +175,18 @@ summary(fit.cox)
 
 # Simulation for Gompertz
 
+- N: sample size 100, 150, 200, 250, 300, 350, 400
+- m: simulation time 1000
+- $\beta$: true treatment effect to be -0.5
+- $\lambda$: 0.5
+- $\gamma$: 0.05, 1, 1.5
+
 ``` r
-sim_gompertz <- function(gamma, N, seed){
-  set.seed(seed)
-  #sim gompertz data
+#write a fn to simulate gompertz data
+sim_gompertz <- function(k, gamma=0.05, N){
+  #generate gompertz data
   covs <- data.frame(id = 1:N,
-                    trt = stats::rbinom(N, 1L, 0.5))
+                    trt = stats::rbinom(N, 1, 0.5))
   dat <- simsurv(dist = "gompertz",
                  lambdas = 0.5, 
                  gammas = gamma, 
@@ -189,8 +194,6 @@ sim_gompertz <- function(gamma, N, seed){
                  x = covs, 
                  maxt = 5)
   dat <- merge(covs, dat)
-  betas <- -0.5
-  
   #fit models
   fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
   fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
@@ -201,35 +204,134 @@ sim_gompertz <- function(gamma, N, seed){
                   weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
                   cox_beta = c(fit.cox$coefficients), 
                   dist = "gompertz",
-                  beta = betas, 
+                  beta = -0.5, 
                   gamma = gamma,
                   N = N)
   return(result)
+  }
+
+# Set seed for reproducibility
+set.seed(2023)
+
+# Create empty dataframe to store results
+results <- data.frame()
+
+# Simulate 1000 times
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_gompertz(gamma = 0.05, N = n)
+  results <- rbind(results, sim_res)
+}
 }
 
-sim_gompertz(gamma = 0.05, N = 1000, seed = 2023)
+gompertz_table <- results %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+gompertz_table
 ```
 
-    ## # A tibble: 1 × 7
-    ##   exp_beta weibull_beta cox_beta dist      beta gamma     N
-    ##      <dbl>        <dbl>    <dbl> <chr>    <dbl> <dbl> <dbl>
-    ## 1   -0.408       -0.406   -0.408 gompertz  -0.5  0.05  1000
+    ## # A tibble: 7 × 10
+    ##       N mse_exp_ mse_weibull mse_cox var_exp var_weib…¹ var_cox bias_…² bias_w…³
+    ##   <dbl>    <dbl>       <dbl>   <dbl>   <dbl>      <dbl>   <dbl>   <dbl>    <dbl>
+    ## 1   100   0.0455      0.0508  0.0522  0.0454     0.0508  0.0522 0.0127  -0.00654
+    ## 2   150   0.0280      0.0309  0.0317  0.0280     0.0308  0.0315 0.00617 -0.0104 
+    ## 3   200   0.0212      0.0232  0.0239  0.0213     0.0230  0.0236 0.00259 -0.0141 
+    ## 4   250   0.0174      0.0181  0.0186  0.0170     0.0181  0.0187 0.0222   0.00777
+    ## 5   300   0.0142      0.0152  0.0157  0.0141     0.0152  0.0156 0.00958 -0.00574
+    ## 6   350   0.0127      0.0133  0.0137  0.0124     0.0133  0.0137 0.0167   0.00243
+    ## 7   400   0.0112      0.0119  0.0122  0.0109     0.0119  0.0122 0.0175   0.00264
+    ## # … with 1 more variable: bias_cox <dbl>, and abbreviated variable names
+    ## #   ¹​var_weibull, ²​bias_exp, ³​bias_weibull
 
 ``` r
-# result
-#gamma=0.05
-results0 = map_dfr(.x = c(rep(0.05, 1000)), 
-        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
-write.csv(results0,"results_gamma0.05.csv")
 #gamma=1
-results1 = map_dfr(.x = c(rep(1, 1000)), 
-        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
-write.csv(results1,"results_gamma1.csv")
-#gamma=2
-results2 = map_dfr(.x = c(rep(2, 1000)), 
-        ~sim_gompertz(gamma = .x, N = 1000, seed = 2023))
-write.csv(results2,"results_gamma2.csv")
+set.seed(2023)
+sim_result2 <- data.frame()
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_gompertz(gamma = 1, N = n)
+  sim_result2 <- rbind(sim_result2, sim_res)
+}
+}
+
+gompertz_table2 <- sim_result2 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+gompertz_table2
 ```
+
+    ## # A tibble: 7 × 10
+    ##       N mse_e…¹ mse_w…² mse_cox var_exp var_w…³ var_cox bias_…⁴ bias_…⁵ bias_cox
+    ##   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>    <dbl>
+    ## 1   100  0.0655  0.0410  0.0494 0.0158  0.0359   0.0493   0.223  0.0712 -0.0129 
+    ## 2   150  0.0568  0.0253  0.0289 0.00898 0.0207   0.0287   0.219  0.0683 -0.0144 
+    ## 3   200  0.0535  0.0198  0.0220 0.00718 0.0157   0.0217   0.215  0.0640 -0.0197 
+    ## 4   250  0.0573  0.0192  0.0177 0.00580 0.0124   0.0177   0.227  0.0824  0.00138
+    ## 5   300  0.0535  0.0157  0.0147 0.00478 0.0105   0.0146   0.221  0.0723 -0.00981
+    ## 6   350  0.0541  0.0152  0.0129 0.00415 0.00904  0.0129   0.223  0.0788 -0.00206
+    ## 7   400  0.0536  0.0142  0.0110 0.00364 0.00819  0.0110   0.224  0.0779 -0.00323
+    ## # … with abbreviated variable names ¹​mse_exp_, ²​mse_weibull, ³​var_weibull,
+    ## #   ⁴​bias_exp, ⁵​bias_weibull
+
+``` r
+#gamma=1.5
+set.seed(2023)
+sim_result3 <- data.frame()
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_gompertz(gamma = 1, N = n)
+  sim_result3 <- rbind(sim_result3, sim_res)
+}
+}
+
+gompertz_table3 <- sim_result3 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+gompertz_table3
+```
+
+    ## # A tibble: 7 × 10
+    ##       N mse_e…¹ mse_w…² mse_cox var_exp var_w…³ var_cox bias_…⁴ bias_…⁵ bias_cox
+    ##   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>    <dbl>
+    ## 1   100  0.0655  0.0410  0.0494 0.0158  0.0359   0.0493   0.223  0.0712 -0.0129 
+    ## 2   150  0.0568  0.0253  0.0289 0.00898 0.0207   0.0287   0.219  0.0683 -0.0144 
+    ## 3   200  0.0535  0.0198  0.0220 0.00718 0.0157   0.0217   0.215  0.0640 -0.0197 
+    ## 4   250  0.0573  0.0192  0.0177 0.00580 0.0124   0.0177   0.227  0.0824  0.00138
+    ## 5   300  0.0535  0.0157  0.0147 0.00478 0.0105   0.0146   0.221  0.0723 -0.00981
+    ## 6   350  0.0541  0.0152  0.0129 0.00415 0.00904  0.0129   0.223  0.0788 -0.00206
+    ## 7   400  0.0536  0.0142  0.0110 0.00364 0.00819  0.0110   0.224  0.0779 -0.00323
+    ## # … with abbreviated variable names ¹​mse_exp_, ²​mse_weibull, ³​var_weibull,
+    ## #   ⁴​bias_exp, ⁵​bias_weibull
 
 # Comparing the accuracy and efficiency of treatment effect ()
 
