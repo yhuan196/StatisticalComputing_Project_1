@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(survival)
 library(tidyverse)
+library(gridExtra)
+library(patchwork)
+library(ggpubr)
 ```
 
 
@@ -48,7 +51,7 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
 
 ```{r}
 set.seed(2023)
-simulate = function(sim, n, b1, dist = "weibull") {
+simulate = function(sim, n, b1, dist = "gompertz") {
   # Set up coefficient vectors
   exp_beta = rep(NA, sim)
   weibull_beta = rep(NA, sim)
@@ -107,9 +110,113 @@ set.seed(2023)
 sim_beta = 
   tibble(beta = c(-0.5, 0.1, 0.5, 1, 3, 5)) %>% 
   mutate(
-    output = map(.x = beta, ~simulate(sim = 1000, N = 400, beta = .x, 
-                                                 dist = "Weibull")$performance),
+    output = map(.x = beta, ~simulate(sim = 1000, n = 400, b1 = .x, 
+                                                 dist = "gompertz")$performance),
     
     output = map(.x = output, ~mutate(.x)))
     
+```
+
+```{r}
+test = sim_beta %>% unnest(output)
+
+```
+
+
+```{r}
+beta_cox_mse=test %>% 
+  ggplot(aes(x = beta, y = mse, color = model)) + 
+  geom_point() +
+  geom_line(size = 1) +
+  labs(title = "Beta vs MSE by Survival Model",
+       x = "Beta",
+       y = "MSE") +
+  theme_bw() + 
+  theme(legend.position = "none")
+beta_cox_mse
+```
+
+
+```{r}
+beta_cox_bias=test %>% 
+  ggplot(aes(x = beta, y = bias, color = model)) + 
+  geom_point() +
+  geom_line(size = 1) +
+  labs(title = "Beta vs Bias by Survival Model",
+       x = "Beta",
+       y = "Bias") +
+  theme_bw() 
+
+beta_cox_bias
+```
+
+```{r}
+beta_cox_mse+beta_cox_bias
+ggsave(file="results/beta_cox.pdf",width=8,height=5)
+
+```
+
+```{r}
+beta_weibull_mse=test %>% 
+  ggplot(aes(x = beta, y = mse, color = model)) + 
+  geom_point() +
+  geom_line(size = 1) +
+  labs(title = "Beta vs MSE by Survival Model",
+       x = "Beta",
+       y = "MSE") +
+  theme_bw() + 
+  theme(legend.position = "none")
+beta_weibull_mse
+```
+
+```{r}
+beta_weibull_bias=test %>% 
+  ggplot(aes(x = beta, y = bias, color = model)) + 
+  geom_point() +
+  geom_line(size = 1) +
+  labs(title = "Beta vs Bias by Survival Model",
+       x = "Beta",
+       y = "Bias") +
+  theme_bw() 
+
+beta_weibull_bias
+```
+
+```{r}
+beta_weibull_mse+beta_weibull_bias
+ggsave(file="results/beta_weibull.pdf",width=8,height=5)
+
+```
+
+```{r}
+beta_exp_mse=test %>% 
+  ggplot(aes(x = beta, y = mse, color = model)) + 
+  geom_point() +
+  geom_line(size = 1) +
+  labs(title = "Beta vs MSE by Survival Model",
+       x = "Beta",
+       y = "MSE") +
+  theme_bw() + 
+  theme(legend.position = "none")
+beta_exp_mse
+```
+
+
+```{r}
+beta_exp_bias=test %>% 
+  ggplot(aes(x = beta, y = bias, color = model)) + 
+  geom_point() +
+  geom_line(size = 1) +
+  labs(title = "Beta vs Bias by Survival Model",
+       x = "Beta",
+       y = "Bias") +
+  theme_bw() 
+  
+
+beta_exp_bias
+```
+
+```{r}
+beta_exp_mse+beta_exp_bias
+ggsave(file="results/beta_exp.pdf",width=8,height=5)
 ```
