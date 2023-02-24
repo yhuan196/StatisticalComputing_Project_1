@@ -114,9 +114,9 @@ sim_results =
                                                         dist = "weibull")$performance),
                 output = map(.x = output, ~mutate(.x)))
 
-temp1 = sim_results %>% unnest(output) 
+temp = sim_results %>% unnest(output) 
 
-weibull_bias=ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
+weibull_bias=ggplot(temp, aes(x = sample_size, y = bias, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
@@ -136,9 +136,9 @@ sim_results =
                                                         dist = "weibull")$performance),
                 output = map(.x = output, ~mutate(.x)))
 
-temp1 = sim_results %>% unnest(output) 
+temp = sim_results %>% unnest(output) 
 
-weibull_var=ggplot(temp1, aes(x = sample_size, y = variance, color = model)) +
+weibull_var=ggplot(temp, aes(x = sample_size, y = variance, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
@@ -158,9 +158,9 @@ sim_results =
                                                         dist = "weibull")$performance),
                 output = map(.x = output, ~mutate(.x)))
 
-temp1 = sim_results %>% unnest(output) 
+temp = sim_results %>% unnest(output) 
 
-weibull_mse=ggplot(temp1, aes(x = sample_size, y = MSE, color = model)) +
+weibull_mse=ggplot(temp, aes(x = sample_size, y = MSE, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
