@@ -16,105 +16,90 @@ library(patchwork)
 
 # Project 1: Design a simulation study to compare three survival models
 
-
-## Examples : Simsurv Package Data Generarion 
-
-```{r}
-set.seed(2023)
-# tot number of patients
-N <- 1000
-
-# define covariates
-covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1, 0.5))
-
-## Exponential
-exp_dist <- simsurv(dist = "exponential", lambdas = 0.5, 
-                    x = covs, betas = c(trt = -0.5), maxt = 5)
-
-
-## Weibull
-weibull_dist <- simsurv(dist <- "weibull", lambdas = 0.5, gammas = 0.05, 
-                        x = covs, betas = c(trt = -0.5), maxt = 5)
-
-
-## Gompertz
-gompertz_dist <- simsurv(dist = "gompertz", lambdas = 0.1, gammas = 0.05, 
-                         x = covs, betas = c(trt = -0.5), maxt = 5)
-
-```
-
-## Generate Gompertz distribution use inverse transformation method
-```{r}
-gen_gompertz <- function(alpha = 0.5, lambda = 0.5, b1 = -0.5, n, seed) {
-  # Generate a random sample from the uniform distribution
-  set.seed(seed)
-  u <- runif(n)
-  x <- rep(0, n)
-  x <- (1/alpha)*log(1-(alpha*log(u)/(lambda*exp(x*b1)))) 
-
-  return(x)
-  
-}
-
-sample_gompertz <- gen_gompertz(n=1000, seed = 123123)
-df <- data.frame(sample_gompertz)
-
-# Visualization to validate the algorithm
- df %>% ggplot(aes(x = sample_gompertz)) +
-  geom_histogram(aes(y = after_stat(density)),
-                 colour = 1, fill = "red", bins = 30) +
-  geom_density() + xlab("x") + ggtitle("Density Distribution")
-```
-
-## Generate Gompertz distribution using simsurv package
-```{r}
-generate_gompertz = function(gamma, N, seed){
-  set.seed(seed)
-  #gen gompertz data
-  covs <- data.frame(id = 1:N,
-                    trt = stats::rbinom(N, 1, 0.5))
-  dat <- simsurv(dist = "gompertz",
-                 lambdas = 0.5, 
-                 gammas = gamma, 
-                 betas = c(trt = -0.5), 
-                 x = covs, 
-                 maxt = 5)
-  dat <- merge(covs, dat)
-  return(dat)
-}
-gompertz_dat <- generate_gompertz(1, 1000, 2023)
-
-eventtime <- data.frame(gompertz_dat$eventtime)
-
-# Visualization to validate the algorithm
-eventtime %>% ggplot(aes(x = gompertz_dat.eventtime)) +
-  geom_histogram(aes(y = after_stat(density)),
-                 colour = 1, fill = "red", bins = 30) +
-  geom_density() + xlab("x") + ggtitle("Density Distribution")
-```
-
-
-
-## fit model
-```{r}
-# fit Exponential
-fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = gompertz_dat, dist = "exponential") 
-summary(fit.exponential)
--fit.exponential$coefficients[-1]
-
-# fit Weibull
-fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = gompertz_dat, dist = "weibull") 
-summary(fit.weibull)
--fit.weibull$coefficients[-1] / fit.weibull$scale
-
-#fit Cox model
-fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = gompertz_dat) 
-summary(fit.cox)
-```
-
 # Plot of Baseline Hazard Function
 ```{r}
+lambda <- 0.5
+alpha <- 0.5
+set.seed(2023)
 
+# gamma = 0.05 
+exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz <- function(t, lambda = 0.5, gamma = 0.05) lambda * gamma * t^(gamma - 1)
+gompertz_haz <- function(t, lambda = 0.5, gamma = 0.05) lambda * exp(gamma* t)
+
+p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+p <- p + 
+  stat_function(fun = exp_haz, aes(col = "log-normal")) + 
+  stat_function(fun = weibull_haz, aes(col = "weibull (gamma = 0.05)")) + 
+  stat_function(fun = gompertz_haz, aes(col = "pink")) + 
+  xlim(0,5) + 
+  ylim(0,2) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Baseline Hazard Function", 
+                     values = c("red", "green", "blue"), 
+                     labels = c("Exponential", "Weibull (gamma = 0.05)", "Gompertz" )) + 
+  theme(legend.position="bottom") + 
+  labs(x = "t", y = "h0(t)")
+
+# gamma = 1
+exp_haz2 <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * gamma * t^(gamma - 1)
+gompertz_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * exp(gamma* t)
+
+p2 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+p2 <- p2 + 
+  stat_function(fun = exp_haz2, aes(col = "log-normal")) + 
+  stat_function(fun = weibull_haz2, aes(col = "weibull (gamma = 1)")) + 
+  stat_function(fun = gompertz_haz2, aes(col = "pink")) + 
+  xlim(0,5) + 
+  ylim(0,2) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Baseline Hazard Function", 
+                     values = c("red", "green", "blue"), 
+                     labels = c("Exponential", "Weibull (gamma = 1)", "Gompertz" )) + 
+  theme(legend.position="bottom") + 
+  labs(x = "t", y = "h0(t)")
+
+# gamma = 1.5
+exp_haz3 <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * gamma * t^(gamma - 1)
+gompertz_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * exp(gamma* t)
+
+p3 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+p3 <- p3 + 
+  stat_function(fun = exp_haz3, aes(col = "log-normal")) + 
+  stat_function(fun = weibull_haz3, aes(col = "weibull (gamma = 1.5)")) + 
+  stat_function(fun = gompertz_haz3, aes(col = "pink")) + 
+  xlim(0,5) + 
+  ylim(0,2) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Baseline Hazard Function", 
+                     values = c("red", "green", "blue"), 
+                     labels = c("Exponential", "Weibull (gamma = 1.5)", "Gompertz" )) + 
+  theme(legend.position="bottom") + 
+  labs(x = "t", y = "h0(t)")
+
+# gamma = 2
+exp_haz3 <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * gamma * t^(gamma - 1)
+gompertz_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * exp(gamma* t)
+
+p4 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+p4 <- p4 + 
+  stat_function(fun = exp_haz3, aes(col = "log-normal")) + 
+  stat_function(fun = weibull_haz3, aes(col = "weibull (gamma = 2)")) + 
+  stat_function(fun = gompertz_haz3, aes(col = "pink")) + 
+  xlim(0,5) + 
+  ylim(0,2) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Baseline Hazard Function", 
+                     values = c("red", "green", "blue"), 
+                     labels = c("Exponential", "Weibull (gamma = 2)", "Gompertz" )) + 
+  theme(legend.position="bottom") + 
+  labs(x = "t", y = "h0(t)")
+
+(p/p2)
+(p3/p4)
 ```
 
 
@@ -124,9 +109,9 @@ summary(fit.cox)
 
 - N: sample size 100, 150, 200, 250, 300, 350, 400
 - m: simulation time 1000
-- $\beta$: true treatment effect to be -0.5
+- $\beta$: true treatment effect to be 2
 - $\lambda$: 0.5
-- $\gamma$: 0.05, 1, 1.5
+- $\gamma$: 0.05, 1, 1.5, 2
 
 ```{r}
 #write a fn to simulate gompertz data
@@ -137,7 +122,7 @@ sim_gompertz <- function(k, gamma=0.05, N){
   dat <- simsurv(dist = "gompertz",
                  lambdas = 0.5, 
                  gammas = gamma, 
-                 betas = c(trt = -0.5), 
+                 betas = c(trt = 2), 
                  x = covs, 
                  maxt = 5)
   dat <- merge(covs, dat)
@@ -151,7 +136,7 @@ sim_gompertz <- function(k, gamma=0.05, N){
                   weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
                   cox_beta = c(fit.cox$coefficients), 
                   dist = "gompertz",
-                  beta = -0.5, 
+                  beta = 2, 
                   gamma = gamma,
                   N = N)
   return(result)
@@ -164,84 +149,154 @@ set.seed(2023)
 sim_gompertz_result1 <- data.frame()
 
 # Simulate 1000 times
-#gamma=0.05
-for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-for (i in 1:1000) {
-  sim_res <- sim_gompertz(gamma = 0.05, N = n)
-  sim_gompertz_result1 <- rbind(sim_gompertz_result1, sim_res)
-}
-}
+# #gamma=0.05
+# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+# for (i in 1:1000) {
+#   sim_res <- sim_gompertz(gamma = 0.05, N = n)
+#   sim_gompertz_result1 <- rbind(sim_gompertz_result1, sim_res)
+# }
+# }
+# 
+# gompertz_table1 <- sim_gompertz_result1 %>% 
+#   group_by(N) %>%
+#   summarize(mse_exp = mean((exp_beta-2)^2),
+#             mse_weibull = mean((weibull_beta-2)^2),
+#             mse_cox = mean((cox_beta-2)^2),
+#             var_exp = var(exp_beta),
+#             var_weibull = var(weibull_beta),
+#             var_cox = var(cox_beta),
+#             bias_exp = mean(exp_beta-2),
+#             bias_weibull = mean(weibull_beta-2),
+#             bias_cox = mean(cox_beta-2)
+#         
+#   )
+# gompertz_table1
+# 
+# 
+# 
+# 
+# 
+# #gamma=1
+# set.seed(2023)
+# sim_gompertz_result2 <- data.frame()
+# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+# for (i in 1:1000) {
+#   sim_res <- sim_gompertz(gamma = 1, N = n)
+#   sim_gompertz_result2 <- rbind(sim_gompertz_result2, sim_res)
+# }
+# }
+# 
+# gompertz_table2 <- sim_gompertz_result2 %>% 
+#   group_by(N) %>%
+#   summarize(mse_exp = mean((exp_beta-2)^2),
+#             mse_weibull = mean((weibull_beta-2)^2),
+#             mse_cox = mean((cox_beta-2)^2),
+#             var_exp = var(exp_beta),
+#             var_weibull = var(weibull_beta),
+#             var_cox = var(cox_beta),
+#             bias_exp = mean(exp_beta-2),
+#             bias_weibull = mean(weibull_beta-2),
+#             bias_cox = mean(cox_beta-2)
+#         
+#   )
+# gompertz_table2
+# 
+# 
+# 
+# #gamma=1.5
+# set.seed(2023)
+# sim_gompertz_result3 <- data.frame()
+# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+# for (i in 1:1000) {
+#   sim_res <- sim_gompertz(gamma = 1.5, N = n)
+#   sim_gompertz_result3  <- rbind(sim_gompertz_result3 , sim_res)
+# }
+# }
+# 
+# gompertz_table3 <- sim_gompertz_result3  %>% 
+#   group_by(N) %>%
+#   summarize(mse_exp = mean((exp_beta-2)^2),
+#             mse_weibull = mean((weibull_beta-2)^2),
+#             mse_cox = mean((cox_beta-2)^2),
+#             var_exp = var(exp_beta),
+#             var_weibull = var(weibull_beta),
+#             var_cox = var(cox_beta),
+#             bias_exp = mean(exp_beta-2),
+#             bias_weibull = mean(weibull_beta-2),
+#             bias_cox = mean(cox_beta-2)
+#         
+#   )
+# gompertz_table3
 
-gompertz_table1 <- sim_gompertz_result1 %>% 
-  group_by(N) %>%
-  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
-            mse_weibull = mean((weibull_beta+0.5)^2),
-            mse_cox = mean((cox_beta+0.5)^2),
-            var_exp = var(exp_beta),
-            var_weibull = var(weibull_beta),
-            var_cox = var(cox_beta),
-            bias_exp = mean(exp_beta+0.5),
-            bias_weibull = mean(weibull_beta+0.5),
-            bias_cox = mean(cox_beta+0.5)
-        
-  )
-gompertz_table1
 
-
-
-
-
-#gamma=1
+#gamma=2
 set.seed(2023)
-sim_gompertz_result2 <- data.frame()
+sim_gompertz_result4 <- data.frame()
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
-  sim_res <- sim_gompertz(gamma = 1, N = n)
-  sim_gompertz_result2 <- rbind(sim_gompertz_result2, sim_res)
+  sim_res <- sim_gompertz(gamma = 2, N = n)
+  sim_gompertz_result4  <- rbind(sim_gompertz_result4 , sim_res)
 }
 }
 
-gompertz_table2 <- sim_gompertz_result2 %>% 
+gompertz_table4 <- sim_gompertz_result4  %>% 
   group_by(N) %>%
-  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
-            mse_weibull = mean((weibull_beta+0.5)^2),
-            mse_cox = mean((cox_beta+0.5)^2),
+  summarize(mse_exp = mean((exp_beta-2)^2),
+            mse_weibull = mean((weibull_beta-2)^2),
+            mse_cox = mean((cox_beta-2)^2),
             var_exp = var(exp_beta),
             var_weibull = var(weibull_beta),
             var_cox = var(cox_beta),
-            bias_exp = mean(exp_beta+0.5),
-            bias_weibull = mean(weibull_beta+0.5),
-            bias_cox = mean(cox_beta+0.5)
+            bias_exp = mean(exp_beta-2),
+            bias_weibull = mean(weibull_beta-2),
+            bias_cox = mean(cox_beta-2)
         
-  )
-gompertz_table2
+  ) 
+gompertz_table4  
+gompertz_table4 <- gompertz_table4 %>% 
+  pivot_longer(mse_exp:bias_cox, values_to = "performance", names_to = "method") %>% separate_wider_delim(method, "_", names = c("method", "model")) %>%
+  pivot_wider(names_from = method, values_from = performance)
+gompertz_table4
+write.csv(gompertz_table4,"table/gompertz_result_table4.csv")
 
+## Models comparison: Bias of three models using Gompertz data 
+gompertz_bias <- gompertz_table4 %>% 
+  ggplot(aes(x = N, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 7",
+       title="Bias vs Sample size by 3 Survival Models") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+gompertz_bias
+ggsave("results/gompertz_bias.pdf", height = 4, width = 6)
+ggsave("results2/gompertz_bias.pdf", height = 4, width = 6)
 
+## Models comparison: Variance of three models using Gompertz data 
+gompertz_var <- gompertz_table4 %>% 
+  ggplot(aes(x = N, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 8",
+       title="Variance vs Sample size by 3 Survival Models") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+gompertz_var
+ggsave("results/gompertz_var.pdf", height = 4, width = 6)
+ggsave("results2/gompertz_var.pdf", height = 4, width = 6)
 
-#gamma=1.5
-set.seed(2023)
-sim_gompertz_result3 <- data.frame()
-for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-for (i in 1:1000) {
-  sim_res <- sim_gompertz(gamma = 1, N = n)
-  sim_gompertz_result3  <- rbind(sim_gompertz_result3 , sim_res)
-}
-}
-
-gompertz_table3 <- sim_gompertz_result3  %>% 
-  group_by(N) %>%
-  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
-            mse_weibull = mean((weibull_beta+0.5)^2),
-            mse_cox = mean((cox_beta+0.5)^2),
-            var_exp = var(exp_beta),
-            var_weibull = var(weibull_beta),
-            var_cox = var(cox_beta),
-            bias_exp = mean(exp_beta+0.5),
-            bias_weibull = mean(weibull_beta+0.5),
-            bias_cox = mean(cox_beta+0.5)
-        
-  )
-gompertz_table3
+## Models comparison: Variance of three models using Gompertz data 
+gompertz_mse <- gompertz_table4 %>% 
+  ggplot(aes(x = N, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 9",
+       title="Variance vs Sample size by 3 Survival Models") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+gompertz_mse
+ggsave("results/gompertz_mse.pdf", height = 4, width = 6)
+ggsave("results2/gompertz_mse.pdf", height = 4, width = 6)
 ```
 
 
@@ -249,7 +304,7 @@ gompertz_table3
 
 - N: sample size 100, 150, 200, 250, 300, 350, 400
 - m: simulation time 1000
-- $\beta$: true treatment effect to be -0.5
+- $\beta$: true treatment effect to be 2
 - $\lambda$: 0.5
 
 ```{r}
@@ -260,7 +315,7 @@ sim_exp <- function(k, N){
                     trt = stats::rbinom(N, 1, 0.5))
   dat <- simsurv(dist = "exponential",
                  lambdas = 0.5, 
-                 betas = c(trt = -0.5), 
+                 betas = c(trt = 2), 
                  x = covs, 
                  maxt = 5)
   dat <- merge(covs, dat)
@@ -274,7 +329,7 @@ sim_exp <- function(k, N){
                   weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
                   cox_beta = c(fit.cox$coefficients), 
                   dist = "exponential",
-                  beta = -0.5, 
+                  beta = 2, 
                   gamma = "default",
                   N = N)
   return(result)
@@ -296,19 +351,61 @@ for (i in 1:1000) {
 
 exponential_table <- sim_exp_result1 %>% 
   group_by(N) %>%
-  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
-            mse_weibull = mean((weibull_beta+0.5)^2),
-            mse_cox = mean((cox_beta+0.5)^2),
+  summarize(mse_exp = mean((exp_beta-2)^2),
+            mse_weibull = mean((weibull_beta-2)^2),
+            mse_cox = mean((cox_beta-2)^2),
             var_exp = var(exp_beta),
             var_weibull = var(weibull_beta),
             var_cox = var(cox_beta),
-            bias_exp = mean(exp_beta+0.5),
-            bias_weibull = mean(weibull_beta+0.5),
-            bias_cox = mean(cox_beta+0.5)
+            bias_exp = mean(exp_beta-2),
+            bias_weibull = mean(weibull_beta-2),
+            bias_cox = mean(cox_beta-2)
         
   )
 
 exponential_table
+
+exponential_table <- exponential_table %>% 
+  pivot_longer(mse_exp:bias_cox, values_to = "performance", names_to = "method") %>% separate_wider_delim(method, "_", names = c("method", "model")) %>%
+  pivot_wider(names_from = method, values_from = performance)
+exponential_table
+write.csv(exponential_table,"table/exponential_result_table.csv")
+
+## Models comparison: Variance of three models using exponential data 
+exponential_bias <- exponential_table %>% 
+  ggplot(aes(x = N, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 1",
+       title="Bias vs Sample size by 3 Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+exponential_bias
+ggsave("results2/exponential_bias.pdf", height = 4, width = 6)
+
+## Models comparison: Variance of three models using exponential data 
+exponential_var <- exponential_table %>% 
+  ggplot(aes(x = N, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 2",
+       title="Variance vs Sample size by 3 Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+exponential_var
+ggsave("results2/exponential_var.pdf", height = 4, width = 6)
+
+## Models comparison: MSE of three models using exponential data 
+exponential_mse <- exponential_table %>% 
+  ggplot(aes(x = N, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 3",
+       title="MSE vs Sample size by 3 Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+exponential_mse
+ggsave("results2/exponential_mse.pdf", height = 4, width = 6)
 ```
 
 
@@ -316,9 +413,9 @@ exponential_table
 
 - N: sample size 100, 150, 200, 250, 300, 350, 400
 - m: simulation time 1000
-- $\beta$: true treatment effect to be -0.5
+- $\beta$: true treatment effect to be 2
 - $\lambda$: 0.5
-- $\gamma$: 0.05, 1, 1.5
+- $\gamma$: 0.05, 1, 1.5, 2
 
 ```{r}
 #write a fn to simulate weibull data
@@ -329,7 +426,7 @@ sim_weibull <- function(k, gamma=0.05, N){
   dat <- simsurv(dist = "weibull",
                  lambdas = 0.5, 
                  gammas = gamma, 
-                 betas = c(trt = -0.5), 
+                 betas = c(trt = 2), 
                  x = covs, 
                  maxt = 5)
   dat <- merge(covs, dat)
@@ -343,7 +440,7 @@ sim_weibull <- function(k, gamma=0.05, N){
                   weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
                   cox_beta = c(fit.cox$coefficients), 
                   dist = "weibull",
-                  beta = -0.5, 
+                  beta = 2, 
                   gamma = gamma,
                   N = N)
   return(result)
@@ -356,77 +453,142 @@ set.seed(2023)
 sim_weibull_result1 <- data.frame()
 
 # Simulate 1000 times
-#gamma=0.05
+# #gamma=0.05
+# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+# for (i in 1:1000) {
+#   sim_res <- sim_weibull(gamma = 0.05, N = n)
+#   sim_weibull_result1 <- rbind(sim_weibull_result1, sim_res)
+# }
+# }
+# 
+# weibull_table1 <- sim_weibull_result1 %>% 
+#   group_by(N) %>%
+#   summarize(mse_exp = mean((exp_beta-2)^2),
+#             mse_weibull = mean((weibull_beta-2)^2),
+#             mse_cox = mean((cox_beta-2)^2),
+#             var_exp = var(exp_beta),
+#             var_weibull = var(weibull_beta),
+#             var_cox = var(cox_beta),
+#             bias_exp = mean(exp_beta-2),
+#             bias_weibull = mean(weibull_beta-2),
+#             bias_cox = mean(cox_beta-2)
+#         
+#   )
+# weibull_table1
+# 
+# 
+# #gamma=1
+# sim_weibull_result2 <- data.frame()
+# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+# for (i in 1:1000) {
+#   sim_res <- sim_weibull(gamma = 1, N = n)
+#   sim_weibull_result2 <- rbind(sim_weibull_result2, sim_res)
+# }
+# }
+# 
+# weibull_table2 <- sim_weibull_result2 %>% 
+#   group_by(N) %>%
+#   summarize(mse_exp = mean((exp_beta-2)^2),
+#             mse_weibull = mean((weibull_beta-2)^2),
+#             mse_cox = mean((cox_beta-2)^2),
+#             var_exp = var(exp_beta),
+#             var_weibull = var(weibull_beta),
+#             var_cox = var(cox_beta),
+#             bias_exp = mean(exp_beta-2),
+#             bias_weibull = mean(weibull_beta-2),
+#             bias_cox = mean(cox_beta-2)
+#         
+#   )
+# weibull_table2
+# 
+# #gamma=1.5
+# sim_weibull_result3 <- data.frame()
+# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+# for (i in 1:1000) {
+#   sim_res <- sim_weibull(gamma = 1.5, N = n)
+#   sim_weibull_result3 <- rbind(sim_weibull_result3, sim_res)
+# }
+# }
+# 
+# weibull_table3 <- sim_weibull_result3 %>% 
+#   group_by(N) %>%
+#   summarize(mse_exp = mean((exp_beta-2)^2),
+#             mse_weibull = mean((weibull_beta-2)^2),
+#             mse_cox = mean((cox_beta-2)^2),
+#             var_exp = var(exp_beta),
+#             var_weibull = var(weibull_beta),
+#             var_cox = var(cox_beta),
+#             bias_exp = mean(exp_beta-2),
+#             bias_weibull = mean(weibull_beta-2),
+#             bias_cox = mean(cox_beta-2)
+#         
+#   )
+# weibull_table3
+
+#gamma=2
+sim_weibull_result4 <- data.frame()
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
-  sim_res <- sim_weibull(gamma = 0.05, N = n)
-  sim_weibull_result1 <- rbind(sim_weibull_result1, sim_res)
+  sim_res <- sim_weibull(gamma = 2, N = n)
+  sim_weibull_result4 <- rbind(sim_weibull_result4, sim_res)
 }
 }
 
-weibull_table1 <- sim_weibull_result1 %>% 
+weibull_table4 <- sim_weibull_result4 %>% 
   group_by(N) %>%
-  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
-            mse_weibull = mean((weibull_beta+0.5)^2),
-            mse_cox = mean((cox_beta+0.5)^2),
+  summarize(mse_exp = mean((exp_beta-2)^2),
+            mse_weibull = mean((weibull_beta-2)^2),
+            mse_cox = mean((cox_beta-2)^2),
             var_exp = var(exp_beta),
             var_weibull = var(weibull_beta),
             var_cox = var(cox_beta),
-            bias_exp = mean(exp_beta+0.5),
-            bias_weibull = mean(weibull_beta+0.5),
-            bias_cox = mean(cox_beta+0.5)
+            bias_exp = mean(exp_beta-2),
+            bias_weibull = mean(weibull_beta-2),
+            bias_cox = mean(cox_beta-2)
         
   )
-weibull_table1
+weibull_table4 <- weibull_table4 %>% 
+  pivot_longer(mse_exp:bias_cox, values_to = "performance", names_to = "method") %>% separate_wider_delim(method, "_", names = c("method", "model")) %>%
+  pivot_wider(names_from = method, values_from = performance)
+weibull_table4
+write.csv(weibull_table4,"table/weibull_result_table4.csv")
 
 
-#gamma=1
-sim_weibull_result2 <- data.frame()
-for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-for (i in 1:1000) {
-  sim_res <- sim_weibull(gamma = 1, N = n)
-  sim_weibull_result2 <- rbind(sim_weibull_result2, sim_res)
-}
-}
+## Models comparison: Bias of three models using weibull data 
+weibull_bias <- weibull_table4 %>% 
+  ggplot(aes(x = N, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 4",
+       title="Bias vs Sample size by 3 Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_bias
+ggsave("results2/weibull_bias.pdf", height = 4, width = 6)
 
-weibull_table2 <- sim_weibull_result1 %>% 
-  group_by(N) %>%
-  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
-            mse_weibull = mean((weibull_beta+0.5)^2),
-            mse_cox = mean((cox_beta+0.5)^2),
-            var_exp = var(exp_beta),
-            var_weibull = var(weibull_beta),
-            var_cox = var(cox_beta),
-            bias_exp = mean(exp_beta+0.5),
-            bias_weibull = mean(weibull_beta+0.5),
-            bias_cox = mean(cox_beta+0.5)
-        
-  )
-weibull_table2
+## Models comparison: Variance of three models using weibull data 
+weibull_var <- weibull_table4 %>% 
+  ggplot(aes(x = N, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 5",
+       title="Variance vs Sample size by 3 Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_var
+ggsave("results2/weibull_var.pdf", height = 4, width = 6)
 
-#gamma=1.5
-sim_weibull_result3 <- data.frame()
-for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-for (i in 1:1000) {
-  sim_res <- sim_weibull(gamma = 1.5, N = n)
-  sim_weibull_result3 <- rbind(sim_weibull_result3, sim_res)
-}
-}
-
-weibull_table3 <- sim_weibull_result1 %>% 
-  group_by(N) %>%
-  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
-            mse_weibull = mean((weibull_beta+0.5)^2),
-            mse_cox = mean((cox_beta+0.5)^2),
-            var_exp = var(exp_beta),
-            var_weibull = var(weibull_beta),
-            var_cox = var(cox_beta),
-            bias_exp = mean(exp_beta+0.5),
-            bias_weibull = mean(weibull_beta+0.5),
-            bias_cox = mean(cox_beta+0.5)
-        
-  )
-weibull_table3
+## Models comparison: MSE of three models using weibull data 
+weibull_mse <- weibull_table4 %>% 
+  ggplot(aes(x = N, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 6",
+       title="MSE vs Sample size by 3 Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_mse
+ggsave("results2/weibull_mse.pdf", height = 4, width = 6)
 ```
 
 
