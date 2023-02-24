@@ -62,7 +62,7 @@ simulate = function(sim, n, b1, dist = "gompertz") {
     for (i in 1:sim) {
       
       data = simdata(n, distribution = dist,b1, 
-                           lambda = 0.5, gamma = 2,alpha=0.5)
+                           lambda = 0.5, gamma = 2,alpha=2)
       
       fit.exponential = survreg(Surv(data$time, data$event) ~ data$x, 
                                 dist = "exponential") 
