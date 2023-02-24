@@ -26,7 +26,7 @@ library(tidyverse)
 
 ```{r}
 set.seed(2023)
-simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
+simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=2) {
   exponential = function(u, x, lambda, b1) {
     time = -log(u) / (exp(x * b1) * lambda) }  
   weibull = function(u, x, lambda, gamma, b1) {
@@ -149,4 +149,15 @@ weibull_var=ggplot(temp1, aes(x = sample_size, y = variance, color = model)) +
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 qwibull_var
 ggsave(file="results/weibull_var.pdf",width=8,height=5)
+```
+```{r}
+weibull_mse=ggplot(temp1, aes(x = sample_size, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(
+       title="Sample size vs Variance by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_mse
+ggsave(file="results/weibull_mse.pdf",width=8,height=5)
 ```
