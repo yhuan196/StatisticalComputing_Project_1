@@ -1,10 +1,11 @@
 ---
-title: "c"
-output: html_document
-date: "2023-02-21"
+title: "group project"
+author: "Ruihan Zhang"
+date: "2023-02-20"
+output: github_document
 ---
 
-```{r setup, include=FALSE}
+ ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -24,7 +25,6 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
     time = (1/alpha) * log( 1 - (alpha * log(u) / (lambda * exp(b1 * x))) ) }
   x = rbinom(n, 1, 0.5)
   u = runif(n)
-
   if (distribution == "exponential") {
     time = exponential(u, x, lambda, b1) } 
   else if (distribution == "weibull") {
@@ -44,15 +44,12 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
                              x = x,
                              event=e)
 }
-#d1=simdata(50,"exponential",-0.5)%>%view()
-
 ```
 
 
 ```{r}
-
 set.seed(2023)
-simulate = function(sim, n, b1, dist = "weibull") {
+simulate = function(sim, n, b1, dist = "exponential") {
   # Set up coefficient vectors
   exp_beta = rep(NA, sim)
   weibull_beta = rep(NA, sim)
@@ -63,13 +60,13 @@ simulate = function(sim, n, b1, dist = "weibull") {
     for (i in 1:sim) {
       
       data = simdata(n, distribution = dist,b1, 
-                           lambda = 0.5, gamma = 2,alpha=0.5)
+                           lambda = 0.5, gamma = 2)
       
-      fit.exponential = survreg(Surv(data$time, data$event) ~ data$x, 
+      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
                                 dist = "exponential") 
-      fit.weibull = survreg(Surv(data$time, data$event) ~ data$x, 
+      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
                             dist = "weibull")
-      fit.gompertz = coxph(Surv(data$time, data$event) ~ data$x)
+      fit.gompertz = coxph(Surv(data$t, data$event) ~ data$x)
       
        
       exp_beta[i] = -fit.exponential$coefficients[-1]
@@ -77,24 +74,19 @@ simulate = function(sim, n, b1, dist = "weibull") {
       gompertz_beta[i] = fit.gompertz$coefficients[1]
       
     }
+  
     
    
   
   coef = tibble(exp = exp_beta,
                 weibull = weibull_beta,
                 gompertz=gompertz_beta)
-  #exp_var = var(exp_beta)
-  #weibull_var = var(weibull_beta)
-  #gompertz_var=var(gompertz_beta)
-  #exp_bias= (sum(exp_beta - b1)) / sim 
-  #weibull_bias=(sum(weibull_beta - b1)) / sim 
-  #gompertz_bias=(sum(gompertz_beta - b1)) / sim 
-  exp_mse=(sum(exp_beta - b1)^2) / sim
-  weibull_mse=(sum(weibull_beta - b1)^2) / sim 
-  gompertz_mse=(sum(gompertz_beta - b1)^2) / sim 
+  exp_bias = (sum(exp_beta - b1)) / sim 
+  weibull_bias = (sum(weibull_beta - b1)) / sim
+  gompertz_bias = (sum(gompertz_beta - b1)) / sim
   
   char = tibble(model = c("exp", "weibull","gompertz"),
-                MSE=c(exp_mse,weibull_mse,gompertz_mse))
+                bias=c(exp_bias,weibull_bias,gompertz_bias))
   
   results = list(coef, char)
   names(results) = c("coefficients", "performance")
@@ -104,73 +96,23 @@ simulate = function(sim, n, b1, dist = "weibull") {
   }
 ```
 
-
-```{r,warning=FALSE}
-set.seed(2023)
-sim_results = 
-  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
-  mutate(
-    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 4, 
-                                                        dist = "weibull")$performance),
-                output = map(.x = output, ~mutate(.x)))
-
-temp1 = sim_results %>% unnest(output) 
-
-weibull_bias=ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
-  geom_point(size = 1) +
-  geom_line(size = 1) +
-  xlab("sample size") +
-  labs(caption = "Figure 4",
-       title="Sample size vs Bias by Survival Model") + 
-  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
-ggsave(file="results/weibull_bias.pdf",width=8,height=5)
-
-```
-
 ```{r}
 set.seed(2023)
 sim_results = 
   tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
   mutate(
-    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 4, 
-                                                        dist = "weibull")$performance),
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = -0.5, 
+                                                        dist = "exponential")$performance),
                 output = map(.x = output, ~mutate(.x)))
-
 temp1 = sim_results %>% unnest(output) 
-
-weibull_var=ggplot(temp1, aes(x = sample_size, y = variance, color = model)) +
+ggplot(temp1, aes(x = sample_size, y = var, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 5",
-       title="Sample size vs Variance by Survival Model") + 
+  labs(caption = "Figure 1",
+       title="Data from Exponential distribution fits in 3 models") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
-weibull_var
-
 ```
-
-```{r}
-set.seed(2023)
-sim_results = 
-  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
-  mutate(
-    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 4, 
-                                                        dist = "weibull")$performance),
-                output = map(.x = output, ~mutate(.x)))
-
-temp1 = sim_results %>% unnest(output) 
-
-weibull_mse=ggplot(temp1, aes(x = sample_size, y = MSE, color = model)) +
-  geom_point(size = 1) +
-  geom_line(size = 1) +
-  xlab("sample size") +
-  labs(caption = "Figure 5",
-       title="Sample size vs MSE by Survival Model") + 
-  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
-weibull_mse
-
-```
-
 
 ```{r}
 set.seed(2023)
@@ -178,33 +120,27 @@ fit_exp = function(df) {
   fit.exponential = survreg(Surv(time, event) ~ x, dist = "exponential", data = df)
   return(as.numeric(-fit.exponential$coefficients[-1]))
 }
-
 fit_weibull = function(df) {
   fit.weibull <- survreg(Surv(time, event) ~ x, dist = "weibull", data = df)
   return(as.numeric(-fit.weibull$coefficients[-1] / fit.weibull$scale))
 }
-
 fit_cox = function(df) {
   fit.cox <- coxph(Surv(time, event) ~ x, data = df)
   return(as.numeric(fit.cox$coefficients))
 }
-
-
 sim_beta=expand.grid(sample_size=c(100,150,200,250,300,350,400),rep=1:1000) %>%
-  mutate(data=map(.x=sample_size,~simdata(n = .x,distribution="weibull", b1=-0.5))) %>%
+  mutate(data=map(.x=sample_size,~simdata(n = .x,distribution="exponential", b1=-0.5))) %>%
   mutate(
     exp_beta = map_dbl(data, fit_exp),
     weibull_beta = map_dbl(data, fit_weibull),
     cox_beta = map_dbl(data, fit_cox)
   ) 
-
 sim_beta %>%ggplot()+geom_density(aes(x = exp_beta,col="red"), size = 0.7) +
   geom_density(aes(x = weibull_beta,col="blue"), size = 0.7) +
   geom_density(aes(x = cox_beta,col="orange"),size = 0.7)+
   facet_grid(sample_size~.)+scale_color_manual(name="models",values=c("blue"="blue","red"="red","orange"="orange"),
                                                labels=c("gompertz","weibull","exp"))+
   scale_x_continuous(breaks = c(-1, -0.5, 0), limits = c(-1.5, 0.5))
-
 ```
 
 
@@ -219,4 +155,3 @@ weibull1
 cox1=t.test(g1$gompertz,conf.level = 0.95)
 cox1
 ```
-
