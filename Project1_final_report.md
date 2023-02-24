@@ -48,12 +48,7 @@ p <- p +
 exp_haz2 <- function(t, lambda = 0.5) lambda * 1 * t^0
 weibull_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * gamma * t^(gamma - 1)
 gompertz_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * exp(gamma* t)
-p
-```
 
-![](Project1_final_report_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
-
-``` r
 p2 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
 p2 <- p2 + 
   stat_function(fun = exp_haz2, aes(col = "log-normal")) + 
@@ -67,12 +62,7 @@ p2 <- p2 +
                      labels = c("Exponential", "Weibull (gamma = 1)", "Gompertz" )) + 
   theme(legend.position="bottom") + 
   labs(x = "t", y = "h0(t)")
-p2
-```
 
-![](Project1_final_report_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
-
-``` r
 # gamma = 1.5
 exp_haz3 <- function(t, lambda = 0.5) lambda * 1 * t^0
 weibull_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * gamma * t^(gamma - 1)
@@ -91,7 +81,8 @@ p3 <- p3 +
                      labels = c("Exponential", "Weibull (gamma = 1.5)", "Gompertz" )) + 
   theme(legend.position="bottom") + 
   labs(x = "t", y = "h0(t)")
-p3
+
+(p/p2/p3)
 ```
 
-![](Project1_final_report_files/figure-gfm/unnamed-chunk-2-3.png)<!-- -->
+![](Project1_final_report_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
