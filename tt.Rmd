@@ -146,19 +146,7 @@ simulatebeta = function(sim, n, b1, dist = "weibull") {
 
 ```
 
-```{r}
 
-t1=simulatebeta(1000,400,2)
-weibull_mean=mean(t1$weibull)
-weibull_sd=sd(t1$weibull)
-z=1.96
-se=(weibull_sd)/sqrt(1000)
-me=z*se
-low=weibull_mean-me
-low
-high=weibull_mean+me
-high
-```
 
 
 
