@@ -58,7 +58,7 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
 
 ```{r}
 set.seed(2023)
-simulate = function(sim, n, b1, dist = "exponential") {
+simulate = function(sim, n, b1, dist = "weibull") {
   # Set up coefficient vectors
   exp_beta = rep(NA, sim)
   weibull_beta = rep(NA, sim)
@@ -69,7 +69,7 @@ simulate = function(sim, n, b1, dist = "exponential") {
     for (i in 1:sim) {
       
       data = simdata(n, distribution = dist,b1, 
-                           lambda = 0.5, gamma = 2,alpha=0.5)
+                           lambda = 0.5, gamma = 2,alpha=2)
       
       fit.exponential = survreg(Surv(data$time, data$event) ~ data$x, 
                                 dist = "exponential") 
@@ -119,14 +119,14 @@ sim_results =
   tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
   mutate(
     output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 2, 
-                                                        dist = "exponential")$performance),
+                                                        dist = "weibull")$performance),
                 output = map(.x = output, ~mutate(.x)))
 temp1 = sim_results %>% unnest(output)
 ```
 
 
 ```{r}
-exp_bias=ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
+weibull_bias=ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
@@ -138,26 +138,15 @@ ggsave(file="results/weibull_bias.pdf",width=8,height=5)
 
 ```
 
-```{r}
-exp_mse=ggplot(temp1, aes(x = sample_size, y = mse, color = model)) +
-  geom_point(size = 1) +
-  geom_line(size = 1) +
-  xlab("sample size") +
-  labs(
-       title="Sample size vs MSE by Survival Model") + 
-  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
-exp_mse
-ggsave(file="results/exp_mse.pdf",width=8,height=5)
-```
 
 ```{r}
-exp_var=ggplot(temp1, aes(x = sample_size, y = variance, color = model)) +
+weibull_var=ggplot(temp1, aes(x = sample_size, y = variance, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
   labs(
        title="Sample size vs Variance by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
-exp_var
-ggsave(file="results/exp_var.pdf",width=8,height=5)
+qwibull_var
+ggsave(file="results/weibull_var.pdf",width=8,height=5)
 ```

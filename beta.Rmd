@@ -19,7 +19,7 @@ library(ggpubr)
 
 ```{r}
 set.seed(2023)
-simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
+simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=2) {
   exponential = function(u, x, lambda, b1) {
     time = -log(u) / (exp(x * b1) * lambda) }  
   weibull = function(u, x, lambda, gamma, b1) {
