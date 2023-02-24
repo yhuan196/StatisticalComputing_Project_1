@@ -52,7 +52,7 @@ simdata = function(n, distribution,b1,lambda=0.5, gamma=2,alpha=0.5) {
 ```{r}
 
 set.seed(2023)
-simulate = function(sim, n, b1, dist = "exponential") {
+simulate = function(sim, n, b1, dist = "weibull") {
   # Set up coefficient vectors
   exp_beta = rep(NA, sim)
   weibull_beta = rep(NA, sim)
@@ -86,12 +86,15 @@ simulate = function(sim, n, b1, dist = "exponential") {
   #exp_var = var(exp_beta)
   #weibull_var = var(weibull_beta)
   #gompertz_var=var(gompertz_beta)
-  exp_bias= mean(exp_beta-b1)
-  weibull_bias=mean(weibull_beta-b1)
-  gompertz_bias=mean(gompertz_beta-b1)
+  #exp_bias= (sum(exp_beta - b1)) / sim 
+  #weibull_bias=(sum(weibull_beta - b1)) / sim 
+  #gompertz_bias=(sum(gompertz_beta - b1)) / sim 
+  exp_mse=(sum(exp_beta - b1)^2) / sim
+  weibull_mse=(sum(weibull_beta - b1)^2) / sim 
+  gompertz_mse=(sum(gompertz_beta - b1)^2) / sim 
   
   char = tibble(model = c("exp", "weibull","gompertz"),
-                bias=c(exp_bias,weibull_bias,gompertz_bias))
+                MSE=c(exp_mse,weibull_mse,gompertz_mse))
   
   results = list(coef, char)
   names(results) = c("coefficients", "performance")
@@ -102,26 +105,72 @@ simulate = function(sim, n, b1, dist = "exponential") {
 ```
 
 
+```{r,warning=FALSE}
+set.seed(2023)
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 4, 
+                                                        dist = "weibull")$performance),
+                output = map(.x = output, ~mutate(.x)))
+
+temp1 = sim_results %>% unnest(output) 
+
+weibull_bias=ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 4",
+       title="Sample size vs Bias by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+ggsave(file="results/weibull_bias.pdf",width=8,height=5)
+
+```
+
 ```{r}
 set.seed(2023)
 sim_results = 
   tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
   mutate(
-    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 2, 
-                                                        dist = "exponential")$performance),
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 4, 
+                                                        dist = "weibull")$performance),
                 output = map(.x = output, ~mutate(.x)))
 
 temp1 = sim_results %>% unnest(output) 
 
-ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
+weibull_var=ggplot(temp1, aes(x = sample_size, y = variance, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 1",
-       title="Data from Weibull distribution fits in 3 models") + 
+  labs(caption = "Figure 5",
+       title="Sample size vs Variance by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_var
 
 ```
+
+```{r}
+set.seed(2023)
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1 = 4, 
+                                                        dist = "weibull")$performance),
+                output = map(.x = output, ~mutate(.x)))
+
+temp1 = sim_results %>% unnest(output) 
+
+weibull_mse=ggplot(temp1, aes(x = sample_size, y = MSE, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(caption = "Figure 5",
+       title="Sample size vs MSE by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_mse
+
+```
+
 
 ```{r}
 set.seed(2023)
