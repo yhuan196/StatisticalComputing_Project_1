@@ -6,17 +6,18 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center", warning = FALSE)
 library(simsurv)
 library(survival)
 library(tidyverse)
 library(ggplot2)
+library(patchwork)
 ```
 
 # Project 1: Design a simulation study to compare three survival models
 
 
-## Simsurv Package Data Generarion Examples
+## Examples : Simsurv Package Data Generarion 
 
 ```{r}
 set.seed(2023)
@@ -27,7 +28,7 @@ N <- 1000
 covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1, 0.5))
 
 ## Exponential
-exp_dist <- simsurv(dist = "gompertz", lambdas = 0.5, gammas = 0.05, 
+exp_dist <- simsurv(dist = "exponential", lambdas = 0.5, 
                     x = covs, betas = c(trt = -0.5), maxt = 5)
 
 
@@ -65,7 +66,7 @@ df <- data.frame(sample_gompertz)
   geom_density() + xlab("x") + ggtitle("Density Distribution")
 ```
 
-## Generate multiple Gompertz distribution using simsurv package
+## Generate Gompertz distribution using simsurv package
 ```{r}
 generate_gompertz = function(gamma, N, seed){
   set.seed(seed)
@@ -111,7 +112,7 @@ fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = gompertz_dat)
 summary(fit.cox)
 ```
 
-# Shape of Survival Function
+# Plot of Baseline Hazard Function
 ```{r}
 
 ```
@@ -160,17 +161,18 @@ sim_gompertz <- function(k, gamma=0.05, N){
 set.seed(2023)
 
 # Create empty dataframe to store results
-results <- data.frame()
+sim_gompertz_result1 <- data.frame()
 
 # Simulate 1000 times
+#gamma=0.05
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_gompertz(gamma = 0.05, N = n)
-  results <- rbind(results, sim_res)
+  sim_gompertz_result1 <- rbind(sim_gompertz_result1, sim_res)
 }
 }
 
-gompertz_table <- results %>% 
+gompertz_table1 <- sim_gompertz_result1 %>% 
   group_by(N) %>%
   summarize(mse_exp_ = mean((exp_beta+0.5)^2),
             mse_weibull = mean((weibull_beta+0.5)^2),
@@ -183,7 +185,7 @@ gompertz_table <- results %>%
             bias_cox = mean(cox_beta+0.5)
         
   )
-gompertz_table
+gompertz_table1
 
 
 
@@ -191,15 +193,15 @@ gompertz_table
 
 #gamma=1
 set.seed(2023)
-sim_result2 <- data.frame()
+sim_gompertz_result2 <- data.frame()
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_gompertz(gamma = 1, N = n)
-  sim_result2 <- rbind(sim_result2, sim_res)
+  sim_gompertz_result2 <- rbind(sim_gompertz_result2, sim_res)
 }
 }
 
-gompertz_table2 <- sim_result2 %>% 
+gompertz_table2 <- sim_gompertz_result2 %>% 
   group_by(N) %>%
   summarize(mse_exp_ = mean((exp_beta+0.5)^2),
             mse_weibull = mean((weibull_beta+0.5)^2),
@@ -218,15 +220,15 @@ gompertz_table2
 
 #gamma=1.5
 set.seed(2023)
-sim_result3 <- data.frame()
+sim_gompertz_result3 <- data.frame()
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_gompertz(gamma = 1, N = n)
-  sim_result3 <- rbind(sim_result3, sim_res)
+  sim_gompertz_result3  <- rbind(sim_gompertz_result3 , sim_res)
 }
 }
 
-gompertz_table3 <- sim_result3 %>% 
+gompertz_table3 <- sim_gompertz_result3  %>% 
   group_by(N) %>%
   summarize(mse_exp_ = mean((exp_beta+0.5)^2),
             mse_weibull = mean((weibull_beta+0.5)^2),
@@ -241,6 +243,194 @@ gompertz_table3 <- sim_result3 %>%
   )
 gompertz_table3
 ```
+
+
+# Simulation for Exponential
+
+- N: sample size 100, 150, 200, 250, 300, 350, 400
+- m: simulation time 1000
+- $\beta$: true treatment effect to be -0.5
+- $\lambda$: 0.5
+
+```{r}
+#write a fn to simulate exponential data
+sim_exp <- function(k, N){
+  #generate exponential data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1, 0.5))
+  dat <- simsurv(dist = "exponential",
+                 lambdas = 0.5, 
+                 betas = c(trt = -0.5), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  #fit models
+  fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
+  fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
+  fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = dat)
+  
+  #extract beta
+  result <- tibble(exp_beta = c(-fit.exponential$coefficients[-1]), 
+                  weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$coefficients), 
+                  dist = "exponential",
+                  beta = -0.5, 
+                  gamma = "default",
+                  N = N)
+  return(result)
+  }
+
+# Set seed for reproducibility
+set.seed(2023)
+
+# Create empty dataframe to store results
+sim_exp_result1  <- data.frame()
+
+# Simulate 1000 times
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_exp(N = n)
+  sim_exp_result1 <- rbind(sim_exp_result1, sim_res)
+}
+}
+
+exponential_table <- sim_exp_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+
+exponential_table
+```
+
+
+# Simulation for Weibull
+
+- N: sample size 100, 150, 200, 250, 300, 350, 400
+- m: simulation time 1000
+- $\beta$: true treatment effect to be -0.5
+- $\lambda$: 0.5
+- $\gamma$: 0.05, 1, 1.5
+
+```{r}
+#write a fn to simulate weibull data
+sim_weibull <- function(k, gamma=0.05, N){
+  #generate weibull data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1, 0.5))
+  dat <- simsurv(dist = "weibull",
+                 lambdas = 0.5, 
+                 gammas = gamma, 
+                 betas = c(trt = -0.5), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  #fit models
+  fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
+  fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
+  fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = dat)
+  
+  #extract beta
+  result <- tibble(exp_beta = c(-fit.exponential$coefficients[-1]), 
+                  weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$coefficients), 
+                  dist = "weibull",
+                  beta = -0.5, 
+                  gamma = gamma,
+                  N = N)
+  return(result)
+  }
+
+# Set seed for reproducibility
+set.seed(2023)
+
+# Create empty dataframe to store results
+sim_weibull_result1 <- data.frame()
+
+# Simulate 1000 times
+#gamma=0.05
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_weibull(gamma = 0.05, N = n)
+  sim_weibull_result1 <- rbind(sim_weibull_result1, sim_res)
+}
+}
+
+weibull_table1 <- sim_weibull_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+weibull_table1
+
+
+#gamma=1
+sim_weibull_result2 <- data.frame()
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_weibull(gamma = 1, N = n)
+  sim_weibull_result2 <- rbind(sim_weibull_result2, sim_res)
+}
+}
+
+weibull_table2 <- sim_weibull_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+weibull_table2
+
+#gamma=1.5
+sim_weibull_result3 <- data.frame()
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_weibull(gamma = 1.5, N = n)
+  sim_weibull_result3 <- rbind(sim_weibull_result3, sim_res)
+}
+}
+
+weibull_table3 <- sim_weibull_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+weibull_table3
+```
+
+
+
 
 
 # Comparing the accuracy and efficiency of treatment effect (\beta)

@@ -5,7 +5,7 @@ Yi Huang, yh3554
 
 # Project 1: Design a simulation study to compare three survival models
 
-## Simsurv Package Data Generarion Examples
+## Examples : Simsurv Package Data Generarion
 
 ``` r
 set.seed(2023)
@@ -16,7 +16,7 @@ N <- 1000
 covs <- data.frame(id = 1:N, trt = stats::rbinom(N, 1, 0.5))
 
 ## Exponential
-exp_dist <- simsurv(dist = "gompertz", lambdas = 0.5, gammas = 0.05, 
+exp_dist <- simsurv(dist = "exponential", lambdas = 0.5, 
                     x = covs, betas = c(trt = -0.5), maxt = 5)
 
 
@@ -54,9 +54,9 @@ df <- data.frame(sample_gompertz)
   geom_density() + xlab("x") + ggtitle("Density Distribution")
 ```
 
-![](P8160_Project1_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
 
-## Generate multiple Gompertz distribution using simsurv package
+## Generate Gompertz distribution using simsurv package
 
 ``` r
 generate_gompertz = function(gamma, N, seed){
@@ -84,7 +84,7 @@ eventtime %>% ggplot(aes(x = gompertz_dat.eventtime)) +
   geom_density() + xlab("x") + ggtitle("Density Distribution")
 ```
 
-![](P8160_Project1_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 ## fit model
 
@@ -171,7 +171,7 @@ summary(fit.cox)
     ## Wald test            = 38.46  on 1 df,   p=6e-10
     ## Score (logrank) test = 38.93  on 1 df,   p=4e-10
 
-# Shape of Survival Function
+# Plot of Baseline Hazard Function
 
 # Simulation for Gompertz
 
@@ -214,17 +214,18 @@ sim_gompertz <- function(k, gamma=0.05, N){
 set.seed(2023)
 
 # Create empty dataframe to store results
-results <- data.frame()
+sim_gompertz_result1 <- data.frame()
 
 # Simulate 1000 times
+#gamma=0.05
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_gompertz(gamma = 0.05, N = n)
-  results <- rbind(results, sim_res)
+  sim_gompertz_result1 <- rbind(sim_gompertz_result1, sim_res)
 }
 }
 
-gompertz_table <- results %>% 
+gompertz_table1 <- sim_gompertz_result1 %>% 
   group_by(N) %>%
   summarize(mse_exp_ = mean((exp_beta+0.5)^2),
             mse_weibull = mean((weibull_beta+0.5)^2),
@@ -237,7 +238,7 @@ gompertz_table <- results %>%
             bias_cox = mean(cox_beta+0.5)
         
   )
-gompertz_table
+gompertz_table1
 ```
 
     ## # A tibble: 7 × 10
@@ -256,15 +257,15 @@ gompertz_table
 ``` r
 #gamma=1
 set.seed(2023)
-sim_result2 <- data.frame()
+sim_gompertz_result2 <- data.frame()
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_gompertz(gamma = 1, N = n)
-  sim_result2 <- rbind(sim_result2, sim_res)
+  sim_gompertz_result2 <- rbind(sim_gompertz_result2, sim_res)
 }
 }
 
-gompertz_table2 <- sim_result2 %>% 
+gompertz_table2 <- sim_gompertz_result2 %>% 
   group_by(N) %>%
   summarize(mse_exp_ = mean((exp_beta+0.5)^2),
             mse_weibull = mean((weibull_beta+0.5)^2),
@@ -296,15 +297,15 @@ gompertz_table2
 ``` r
 #gamma=1.5
 set.seed(2023)
-sim_result3 <- data.frame()
+sim_gompertz_result3 <- data.frame()
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_gompertz(gamma = 1, N = n)
-  sim_result3 <- rbind(sim_result3, sim_res)
+  sim_gompertz_result3  <- rbind(sim_gompertz_result3 , sim_res)
 }
 }
 
-gompertz_table3 <- sim_result3 %>% 
+gompertz_table3 <- sim_gompertz_result3  %>% 
   group_by(N) %>%
   summarize(mse_exp_ = mean((exp_beta+0.5)^2),
             mse_weibull = mean((weibull_beta+0.5)^2),
@@ -332,6 +333,2598 @@ gompertz_table3
     ## 7   400  0.0536  0.0142  0.0110 0.00364 0.00819  0.0110   0.224  0.0779 -0.00323
     ## # … with abbreviated variable names ¹​mse_exp_, ²​mse_weibull, ³​var_weibull,
     ## #   ⁴​bias_exp, ⁵​bias_weibull
+
+# Simulation for Exponential
+
+- N: sample size 100, 150, 200, 250, 300, 350, 400
+- m: simulation time 1000
+- $\beta$: true treatment effect to be -0.5
+- $\lambda$: 0.5
+
+``` r
+#write a fn to simulate exponential data
+sim_exp <- function(k, N){
+  #generate exponential data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1, 0.5))
+  dat <- simsurv(dist = "exponential",
+                 lambdas = 0.5, 
+                 betas = c(trt = -0.5), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  #fit models
+  fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
+  fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
+  fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = dat)
+  
+  #extract beta
+  result <- tibble(exp_beta = c(-fit.exponential$coefficients[-1]), 
+                  weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$coefficients), 
+                  dist = "exponential",
+                  beta = -0.5, 
+                  gamma = "default",
+                  N = N)
+  return(result)
+  }
+
+# Set seed for reproducibility
+set.seed(2023)
+
+# Create empty dataframe to store results
+sim_exp_result1  <- data.frame()
+
+# Simulate 1000 times
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_exp(N = n)
+  sim_exp_result1 <- rbind(sim_exp_result1, sim_res)
+}
+}
+
+exponential_table <- sim_exp_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+
+exponential_table
+```
+
+    ## # A tibble: 7 × 10
+    ##       N mse_exp_ mse_weibull mse_cox var_exp var_wei…¹ var_cox bias_exp bias_w…²
+    ##   <dbl>    <dbl>       <dbl>   <dbl>   <dbl>     <dbl>   <dbl>    <dbl>    <dbl>
+    ## 1   100   0.0508      0.0539  0.0537  0.0508    0.0538  0.0537 -0.00585 -0.0121 
+    ## 2   150   0.0315      0.0329  0.0326  0.0313    0.0326  0.0325 -0.0133  -0.0168 
+    ## 3   200   0.0243      0.0251  0.0249  0.0241    0.0247  0.0247 -0.0162  -0.0196 
+    ## 4   250   0.0194      0.0196  0.0196  0.0194    0.0196  0.0196  0.00304  0.00113
+    ## 5   300   0.0157      0.0162  0.0162  0.0156    0.0160  0.0161 -0.00884 -0.0112 
+    ## 6   350   0.0138      0.0141  0.0141  0.0138    0.0141  0.0141 -0.00330 -0.00478
+    ## 7   400   0.0122      0.0126  0.0126  0.0122    0.0126  0.0126 -0.00188 -0.00388
+    ## # … with 1 more variable: bias_cox <dbl>, and abbreviated variable names
+    ## #   ¹​var_weibull, ²​bias_weibull
+
+# Simulation for Weibull
+
+- N: sample size 100, 150, 200, 250, 300, 350, 400
+- m: simulation time 1000
+- $\beta$: true treatment effect to be -0.5
+- $\lambda$: 0.5
+- $\gamma$: 0.05, 1, 1.5
+
+``` r
+#write a fn to simulate weibull data
+sim_weibull <- function(k, gamma=0.05, N){
+  #generate weibull data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1, 0.5))
+  dat <- simsurv(dist = "weibull",
+                 lambdas = 0.5, 
+                 gammas = gamma, 
+                 betas = c(trt = -0.5), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  #fit models
+  fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
+  fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
+  fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = dat)
+  
+  #extract beta
+  result <- tibble(exp_beta = c(-fit.exponential$coefficients[-1]), 
+                  weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$coefficients), 
+                  dist = "weibull",
+                  beta = -0.5, 
+                  gamma = gamma,
+                  N = N)
+  return(result)
+  }
+
+# Set seed for reproducibility
+set.seed(2023)
+
+# Create empty dataframe to store results
+sim_weibull_result1 <- data.frame()
+
+# Simulate 1000 times
+#gamma=0.05
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_weibull(gamma = 0.05, N = n)
+  sim_weibull_result1 <- rbind(sim_weibull_result1, sim_res)
+}
+}
+```
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+    ## Warning in survreg.fit(X, Y, weights, offset, init = init, controlvals =
+    ## control, : Ran out of iterations and did not converge
+
+``` r
+weibull_table1 <- sim_weibull_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+weibull_table1
+```
+
+    ## # A tibble: 7 × 10
+    ##       N  mse_exp_ mse_weibull mse_cox   var_exp var_w…¹ var_cox bias_…² bias_w…³
+    ##   <dbl>     <dbl>       <dbl>   <dbl>     <dbl>   <dbl>   <dbl>   <dbl>    <dbl>
+    ## 1   100 418805.        0.149   0.147  419199.    0.149   0.147   -4.98  -0.0228 
+    ## 2   150   8027.        0.0805  0.0797   8020.    0.0798  0.0791  -3.91  -0.0279 
+    ## 3   200     29.7       0.0673  0.0665     29.0   0.0664  0.0658  -0.812 -0.0304 
+    ## 4   250     13.3       0.0499  0.0496     13.0   0.0499  0.0496  -0.596  0.00233
+    ## 5   300      7.44      0.0417  0.0414      7.23  0.0417  0.0414  -0.467 -0.00956
+    ## 6   350      1.45      0.0359  0.0356      1.30  0.0359  0.0356  -0.394 -0.00561
+    ## 7   400      1.26      0.0315  0.0314      1.12  0.0313  0.0312  -0.380 -0.0138 
+    ## # … with 1 more variable: bias_cox <dbl>, and abbreviated variable names
+    ## #   ¹​var_weibull, ²​bias_exp, ³​bias_weibull
+
+``` r
+#gamma=1
+sim_weibull_result2 <- data.frame()
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_weibull(gamma = 1, N = n)
+  sim_weibull_result2 <- rbind(sim_weibull_result2, sim_res)
+}
+}
+
+weibull_table2 <- sim_weibull_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+weibull_table2
+```
+
+    ## # A tibble: 7 × 10
+    ##       N  mse_exp_ mse_weibull mse_cox   var_exp var_w…¹ var_cox bias_…² bias_w…³
+    ##   <dbl>     <dbl>       <dbl>   <dbl>     <dbl>   <dbl>   <dbl>   <dbl>    <dbl>
+    ## 1   100 418805.        0.149   0.147  419199.    0.149   0.147   -4.98  -0.0228 
+    ## 2   150   8027.        0.0805  0.0797   8020.    0.0798  0.0791  -3.91  -0.0279 
+    ## 3   200     29.7       0.0673  0.0665     29.0   0.0664  0.0658  -0.812 -0.0304 
+    ## 4   250     13.3       0.0499  0.0496     13.0   0.0499  0.0496  -0.596  0.00233
+    ## 5   300      7.44      0.0417  0.0414      7.23  0.0417  0.0414  -0.467 -0.00956
+    ## 6   350      1.45      0.0359  0.0356      1.30  0.0359  0.0356  -0.394 -0.00561
+    ## 7   400      1.26      0.0315  0.0314      1.12  0.0313  0.0312  -0.380 -0.0138 
+    ## # … with 1 more variable: bias_cox <dbl>, and abbreviated variable names
+    ## #   ¹​var_weibull, ²​bias_exp, ³​bias_weibull
+
+``` r
+#gamma=1.5
+sim_weibull_result3 <- data.frame()
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_weibull(gamma = 1.5, N = n)
+  sim_weibull_result3 <- rbind(sim_weibull_result3, sim_res)
+}
+}
+
+weibull_table3 <- sim_weibull_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp_ = mean((exp_beta+0.5)^2),
+            mse_weibull = mean((weibull_beta+0.5)^2),
+            mse_cox = mean((cox_beta+0.5)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta+0.5),
+            bias_weibull = mean(weibull_beta+0.5),
+            bias_cox = mean(cox_beta+0.5)
+        
+  )
+weibull_table3
+```
+
+    ## # A tibble: 7 × 10
+    ##       N  mse_exp_ mse_weibull mse_cox   var_exp var_w…¹ var_cox bias_…² bias_w…³
+    ##   <dbl>     <dbl>       <dbl>   <dbl>     <dbl>   <dbl>   <dbl>   <dbl>    <dbl>
+    ## 1   100 418805.        0.149   0.147  419199.    0.149   0.147   -4.98  -0.0228 
+    ## 2   150   8027.        0.0805  0.0797   8020.    0.0798  0.0791  -3.91  -0.0279 
+    ## 3   200     29.7       0.0673  0.0665     29.0   0.0664  0.0658  -0.812 -0.0304 
+    ## 4   250     13.3       0.0499  0.0496     13.0   0.0499  0.0496  -0.596  0.00233
+    ## 5   300      7.44      0.0417  0.0414      7.23  0.0417  0.0414  -0.467 -0.00956
+    ## 6   350      1.45      0.0359  0.0356      1.30  0.0359  0.0356  -0.394 -0.00561
+    ## 7   400      1.26      0.0315  0.0314      1.12  0.0313  0.0312  -0.380 -0.0138 
+    ## # … with 1 more variable: bias_cox <dbl>, and abbreviated variable names
+    ## #   ¹​var_weibull, ²​bias_exp, ³​bias_weibull
 
 # Comparing the accuracy and efficiency of treatment effect ()
 
