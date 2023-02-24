@@ -8,18 +8,38 @@ Yi Huang, yh3554
 # Plot of Baseline Hazard Function
 
 ``` r
+# parameter and seed
 lambda <- 0.5
-alpha <- 0.5
 set.seed(2023)
 
-# gamma = 0.05 
+
+# gamma = 2, alpha = 2
+exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz <- function(t, lambda = 0.5, gamma = 2) lambda * gamma * t^(gamma - 1)
+gompertz_haz <- function(t, lambda = 0.5, gamma = 2) lambda * exp(gamma* t)
+
+p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+p <- p + 
+  stat_function(fun = exp_haz, aes(col = "exponential")) + 
+  stat_function(fun = weibull_haz, aes(col = "weibull (gamma = 2)")) + 
+  stat_function(fun = gompertz_haz, aes(col = "pink")) + 
+  xlim(0,5) + 
+  ylim(0,2) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Baseline Hazard Function", 
+                     values = c("red", "green", "blue"), 
+                     labels = c("Exponential", "Weibull (gamma = 2)", "Gompertz(alpha = 2)" )) + 
+  theme(legend.position="bottom") + 
+  labs(x = "t", y = "h0(t)")
+
+# gamma = 0.05, alpha = 0.05
 exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
 weibull_haz <- function(t, lambda = 0.5, gamma = 0.05) lambda * gamma * t^(gamma - 1)
 gompertz_haz <- function(t, lambda = 0.5, gamma = 0.05) lambda * exp(gamma* t)
 
-p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
-p <- p + 
-  stat_function(fun = exp_haz, aes(col = "log-normal")) + 
+p1 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+p1 <- p1 + 
+  stat_function(fun = exp_haz, aes(col = "exponential")) + 
   stat_function(fun = weibull_haz, aes(col = "weibull (gamma = 0.05)")) + 
   stat_function(fun = gompertz_haz, aes(col = "pink")) + 
   xlim(0,5) + 
@@ -27,18 +47,18 @@ p <- p +
   theme_minimal() + 
   scale_color_manual(name = "Baseline Hazard Function", 
                      values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 0.05)", "Gompertz" )) + 
+                     labels = c("Exponential", "Weibull (gamma = 0.05)", "Gompertz(alpha = 0.05)" )) + 
   theme(legend.position="bottom") + 
   labs(x = "t", y = "h0(t)")
 
-# gamma = 1
+# gamma = 1, alpha = 1
 exp_haz2 <- function(t, lambda = 0.5) lambda * 1 * t^0
 weibull_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * gamma * t^(gamma - 1)
 gompertz_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * exp(gamma* t)
 
 p2 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
 p2 <- p2 + 
-  stat_function(fun = exp_haz2, aes(col = "log-normal")) + 
+  stat_function(fun = exp_haz2, aes(col = "exponential")) + 
   stat_function(fun = weibull_haz2, aes(col = "weibull (gamma = 1)")) + 
   stat_function(fun = gompertz_haz2, aes(col = "pink")) + 
   xlim(0,5) + 
@@ -46,37 +66,18 @@ p2 <- p2 +
   theme_minimal() + 
   scale_color_manual(name = "Baseline Hazard Function", 
                      values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 1)", "Gompertz" )) + 
+                     labels = c("Exponential", "Weibull (gamma = 1)", "Gompertz(alpha = 1)" )) + 
   theme(legend.position="bottom") + 
   labs(x = "t", y = "h0(t)")
 
-# gamma = 1.5
+# gamma = 2, alpha = 0.5
 exp_haz3 <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * gamma * t^(gamma - 1)
-gompertz_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * exp(gamma* t)
+weibull_haz3 <- function(t, lambda = 0.5, gamma = 2) lambda * gamma * t^(gamma - 1)
+gompertz_haz3 <- function(t, lambda = 0.5, gamma = 0.5) lambda * exp(gamma* t)
 
 p3 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
 p3 <- p3 + 
-  stat_function(fun = exp_haz3, aes(col = "log-normal")) + 
-  stat_function(fun = weibull_haz3, aes(col = "weibull (gamma = 1.5)")) + 
-  stat_function(fun = gompertz_haz3, aes(col = "pink")) + 
-  xlim(0,5) + 
-  ylim(0,2) + 
-  theme_minimal() + 
-  scale_color_manual(name = "Baseline Hazard Function", 
-                     values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 1.5)", "Gompertz" )) + 
-  theme(legend.position="bottom") + 
-  labs(x = "t", y = "h0(t)")
-
-# gamma = 2
-exp_haz3 <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * gamma * t^(gamma - 1)
-gompertz_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * exp(gamma* t)
-
-p4 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
-p4 <- p4 + 
-  stat_function(fun = exp_haz3, aes(col = "log-normal")) + 
+  stat_function(fun = exp_haz3, aes(col = "exponential")) + 
   stat_function(fun = weibull_haz3, aes(col = "weibull (gamma = 2)")) + 
   stat_function(fun = gompertz_haz3, aes(col = "pink")) + 
   xlim(0,5) + 
@@ -84,11 +85,30 @@ p4 <- p4 +
   theme_minimal() + 
   scale_color_manual(name = "Baseline Hazard Function", 
                      values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 2)", "Gompertz" )) + 
+                     labels = c("Exponential", "Weibull (gamma = 2)", "Gompertz(alpha = 0.5)" )) + 
   theme(legend.position="bottom") + 
   labs(x = "t", y = "h0(t)")
 
-(p/p2)
+# gamma = 1.5, alpha = 1.5
+exp_haz3 <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * gamma * t^(gamma - 1)
+gompertz_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * exp(gamma* t)
+
+p4 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+p4 <- p4 + 
+  stat_function(fun = exp_haz3, aes(col = "exponential")) + 
+  stat_function(fun = weibull_haz3, aes(col = "weibull (gamma = 1.5)")) + 
+  stat_function(fun = gompertz_haz3, aes(col = "pink")) + 
+  xlim(0,5) + 
+  ylim(0,2) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Baseline Hazard Function", 
+                     values = c("red", "green", "blue"), 
+                     labels = c("Exponential", "Weibull (gamma = 1.5)", "Gompertz(alpha = 1.5)" )) + 
+  theme(legend.position="bottom") + 
+  labs(x = "t", y = "h0(t)")
+
+(p/p3)
 ```
 
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
@@ -106,10 +126,11 @@ p4 <- p4 +
 - $\beta$: true treatment effect to be 2
 - $\lambda$: 0.5
 - $\gamma$: 0.05, 1, 1.5, 2
+- $\alpha$: 2
 
 ``` r
 #write a fn to simulate gompertz data
-sim_gompertz <- function(k, gamma=0.05, N){
+sim_gompertz <- function(k, gamma, N){
   #generate gompertz data
   covs <- data.frame(id = 1:N,
                     trt = stats::rbinom(N, 1, 0.5))
@@ -302,8 +323,8 @@ gompertz_bias
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results/gompertz_bias.pdf", height = 4, width = 6)
-ggsave("results2/gompertz_bias.pdf", height = 4, width = 6)
+ggsave("results/gompertz_bias.pdf", height = 5, width = 8)
+ggsave("results2/gompertz_bias.pdf", height = 5, width = 8)
 
 ## Models comparison: Variance of three models using Gompertz data 
 gompertz_var <- gompertz_table4 %>% 
@@ -320,8 +341,8 @@ gompertz_var
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-2-2.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results/gompertz_var.pdf", height = 4, width = 6)
-ggsave("results2/gompertz_var.pdf", height = 4, width = 6)
+ggsave("results/gompertz_var.pdf", height = 5, width = 8)
+ggsave("results2/gompertz_var.pdf", height = 5, width = 8)
 
 ## Models comparison: Variance of three models using Gompertz data 
 gompertz_mse <- gompertz_table4 %>% 
@@ -338,8 +359,8 @@ gompertz_mse
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-2-3.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results/gompertz_mse.pdf", height = 4, width = 6)
-ggsave("results2/gompertz_mse.pdf", height = 4, width = 6)
+ggsave("results/gompertz_mse.pdf", height = 5, width = 8)
+ggsave("results2/gompertz_mse.pdf", height = 5, width = 8)
 ```
 
 # Simulation for Exponential
@@ -461,7 +482,7 @@ exponential_bias
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results2/exponential_bias.pdf", height = 4, width = 6)
+ggsave("results2/exponential_bias.pdf", height = 5, width = 8)
 
 ## Models comparison: Variance of three models using exponential data 
 exponential_var <- exponential_table %>% 
@@ -478,7 +499,7 @@ exponential_var
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results2/exponential_var.pdf", height = 4, width = 6)
+ggsave("results2/exponential_var.pdf", height = 5, width = 8)
 
 ## Models comparison: MSE of three models using exponential data 
 exponential_mse <- exponential_table %>% 
@@ -495,7 +516,7 @@ exponential_mse
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results2/exponential_mse.pdf", height = 4, width = 6)
+ggsave("results2/exponential_mse.pdf", height = 5, width = 8)
 ```
 
 # Simulation for Weibull
@@ -504,11 +525,11 @@ ggsave("results2/exponential_mse.pdf", height = 4, width = 6)
 - m: simulation time 1000
 - $\beta$: true treatment effect to be 2
 - $\lambda$: 0.5
-- $\gamma$: 0.05, 1, 1.5, 2
+- $\gamma = \alpha$: 0.05, 1, 1.5, 2
 
 ``` r
 #write a fn to simulate weibull data
-sim_weibull <- function(k, gamma=0.05, N){
+sim_weibull <- function(k, gamma, N){
   #generate weibull data
   covs <- data.frame(id = 1:N,
                     trt = stats::rbinom(N, 1, 0.5))
@@ -676,7 +697,7 @@ weibull_bias
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results2/weibull_bias.pdf", height = 4, width = 6)
+ggsave("results2/weibull_bias.pdf", height = 5, width = 8)
 
 ## Models comparison: Variance of three models using weibull data 
 weibull_var <- weibull_table4 %>% 
@@ -693,7 +714,7 @@ weibull_var
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-4-2.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results2/weibull_var.pdf", height = 4, width = 6)
+ggsave("results2/weibull_var.pdf", height = 5, width = 8)
 
 ## Models comparison: MSE of three models using weibull data 
 weibull_mse <- weibull_table4 %>% 
@@ -710,7 +731,7 @@ weibull_mse
 <img src="P8160_Project1_files/figure-gfm/unnamed-chunk-4-3.png" style="display: block; margin: auto;" />
 
 ``` r
-ggsave("results2/weibull_mse.pdf", height = 4, width = 6)
+ggsave("results2/weibull_mse.pdf", height = 5, width = 8)
 ```
 
 # Comparing the accuracy and efficiency of treatment effect ()
@@ -749,3 +770,5 @@ $$MSE= \frac{1}{k}\sum_{i=1}^k(\hat{\beta_{weibull}^{(k)}}-\beta_{1})^2=\frac{1}
 
 *Cox Proportional-Hazards Model*:  
 $$MSE= \frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-\beta_{1})^2=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-0.5)^2$$  
+
+## Confidence Interval
