@@ -1,6 +1,6 @@
 P8160_Project1_Survival
 ================
-Yi Huang, yh3554
+Yi Huang
 2023-02-19
 
 # Project 1: Design a simulation study to compare three survival models
@@ -715,7 +715,7 @@ weibull_mse
 ggsave("results2/weibull_mse.pdf", height = 5, width = 8)
 ```
 
-# Comparing the accuracy and efficiency of treatment effect ()
+# Comparing the accuracy and efficiency of treatment effect ($\beta$)
 
 *k*: the number of independent data sets  
 
