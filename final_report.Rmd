@@ -43,7 +43,50 @@ Survival analysis is a statistical technique used to examine data that measures 
 # Objective
 The objective is to design a simulation study to compare and contrast the efficiency and accuracy of the estimated treatment effects under different baseline hazard functions and assess their robustness against misspecified baseline hazard functions. A practical and effective recommendation will be provided to general users to select a suitable model on the basis of the numerical investigations. 
 
+# Background
+
+Survival function, $S(t)$ is the probability of observing individual survival time $T$ beyond a certain time $t$. To analyze survival data, we define a **survival function** $S(t)$ as
+$$S(t) = \operatorname{Pr}(T > t) = \int_t^\infty f(s) ds$$
+where $T > 0$\
+The Cumulative distribution function of the random variable survival time $T$, F(t) is the probability of observing individual survival time less than a certain time t, we define **CDF of survival time** $F(t)$ as
+$$F(t) = Pr(T \leq t) = 1 - S(t) = 1 - \int_t^{\infty}f(s) ds$$
+The Hazard function, $h(t)$ measures the instantaneous risk of failure at time $t$ giving that a patient has survived until time $t$, defined as the ratio of the probability density function of time variable and Survival function. 
+$$h(t) = \displaystyle{\lim_{\Delta_t \to 0}}\frac{Pr((T\in(t,t+\Delta_t)|T>t)}{\Delta_t} = \frac{f(t)}{S(t)}$$
+
+
+Proportional hazard model is the primary regression model to investigate the effectiveness of treatment $X$ over survival time $T$, where the i-th patient at a time $t$ \
+is\
+$$h_i(t) = h_0(t)e^{x_i\beta}$$
+where
+
+\begin{itemize}
+
+\item $h_0(t)$ is the baseline hazard function
+
+\item $x_i$ is is the treatment indicator variable (control = 0, treatment = 1)
+
+\item $\beta$ is the parameter of interest, which is the log hazard ratio for the treatment effect. $\beta$ measures the relative hazard reduction due to treatment in comparison to the control.
+
+\end{itemize}
+
+The **proportional hazard** can be expressed as ratio of two hazard functions at time t given individuals in different treatment groups, and does not depend on $t$. 
+
+$$\frac{h(t|x_0)}{h(t|x_1)} = e^{\beta({x_0-x_1})}$$
+
+
+There are different ways to formulate the baseline hazard function $h_0(t)$, which lead to different models and estimations. 
+
+**An exponential proportional-hazards model** assumes the baseline hazard function is a constant $$h_0(t) = \lambda$$ 
+
+**A Weibull proportional-hazards model** assumes the baseline hazard function  follows Weibull distribution, where $$h_0(t) = \lambda\gamma t^{\gamma-1}$$ for $\gamma>0$ 
+
+**A Cox proportional-hazards model** leaves $h_0(t)$ unspecified.
+
+Note that exponential distribution is a special case of Weibull distribution where $\lambda =1$. Hence, among the three models,  the exponential proportional-hazards model is the most restrictive model, while the Cox model is the most general one.
+
+
 # Methodology
+
 
 ## Section 1
 ## Section 2
