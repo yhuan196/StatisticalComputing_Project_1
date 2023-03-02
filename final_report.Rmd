@@ -1,87 +1,275 @@
 ---
 title: "P8160 Project 1 Final Report" 
+subtitle: "A Simulation Study to Compare Three Survival Models"
+date: "March 3, 2023"
 author: "Jingchen Chai, Yi Huang, Ruihan Zhang"
 output:
-  github_document:
-    default
   pdf_document:
     toc: yes
     toc_depth: 2
+  keep_tex: true
   html_document:
     df_print: paged
     toc: yes
     toc_depth: '2'
 header-includes:
+- \usepackage{hyperref}
+- \hypersetup{colorlinks=false, linktoc=all, linkcolor=red}
 - \usepackage{fancyhdr}
 - \usepackage{lipsum}
 - \pagestyle{fancy}
 - \fancyhead[R]{\thepage}
 - \fancypagestyle{plain}{\pagestyle{fancy}}
+- \usepackage{hyperref}
+- \AtBeginDocument{\addtocontents{toc}{\protect\hypertarget{mylink}{}\hspace{0.25in}\hspace{0.5in}\par}}
+- \usepackage{placeins}
+- \usepackage{caption}
 --- 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, results = 'asis', fig.align = "center")
 ```
 
+\newpage
 ```{r}
 library(ggplot2)
-library(patchwork)
 ```
 
+# Abstract
+Survival analysis is a statistical method used to analyze time-to-event data, such as the time until a patient’s death. It is commonly used in medical research to estimate the probability of an event occurring over time and to identify factors that may affect the risk of the event. The analysis also considers time-dependent covariates that vary over time and can be used to compare the survival times between different groups of patients. The objective of the simulation study is to evaluate the robustness of three survival models against the misspecified baseline hazard functions. To achieve this goal, we assess the accuracy and efficiency of the estimated treatment effects ($\beta$) for each model under various baseline hazard functions. This project will perform simulations to compare the parametric regression model (Exponential and Weibull) to the semi-parametric regression model (Cox) for survival data. We apply the inverse transformation method to generate survival data with censored observations from Exponential, Weibull, Gompertz, and Gamma distributions. Despite the different models, we found
 
-# Plot of Baseline Hazard Function
 
-```{r}
-# parameter and seed
-set.seed(2023)
+# Introduction
+Survival analysis is a statistical technique used to examine data that measures the time it takes for an event to occur, such as a patient's death. It is commonly used in medical research to determine the likelihood of an event happening over a specific time period and to identify factors that may impact the risk of the event. This method takes into account censoring, which happens when participants do not experience the event before the end of the study or the event occurs after the study period. For instance, a study may track breast cancer patients from diagnosis to death or the end of a five-year period. In survival analysis, uncensored data is recorded when the event occurs at the exact observed event time, and it is coded as 1 in the status indicator variable. Conversely, censored data occurs when patients are lost to follow-up or the event happens after the study period, and it is coded as 0 in the status indicator variable. Time-dependent covariates are also considered in the analysis, which can vary over time and can be used to compare the survival times of different participant groups, such as a treatment group and a control group.
 
-# gamma = 2, alpha = 2
-exp_haz <- function(t, lambda = 0.5) {lambda * 1 * t^0}
-weibull_haz_2 <- function(t, lambda = 0.5) lambda * 2 * t^(2 - 1)
-gompertz_haz_2 <- function(t, lambda = 0.5) lambda * exp(2* t)
+# Objective
+The objective is to design a simulation study to compare and contrast the efficiency and accuracy of the estimated treatment effects under different baseline hazard functions and assess their robustness against misspecified baseline hazard functions. A practical and effective recommendation will be provided to general users to select a suitable model on the basis of the numerical investigations. 
 
-p1 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
-    geom_path(aes(colour="red"), stat="function", fun=exp_haz)+
-    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_2)+
-    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_2) +
-    scale_colour_identity("Hazard Function", guide="legend", 
-                          labels = c("Exponential", "Weibull(gamma = 2)", "Gompertz (alpha = 2)"), 
-                          breaks = c("red", "green", "blue")) +
-    labs(x = "t",
-         y = "h0(t)") + ylim(0,2)
+# Background
 
-# gamma = 1.5, alpha = 1.5
-exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz_1.5 <- function(t, lambda = 0.5) lambda * 1.5 * t^(1.5 - 1)
-gompertz_haz_1.5 <- function(t, lambda = 0.5) lambda * exp(1.5* t)
+## Survival function, CDF of survival time, hazard function
+Survival function, $S(t)$ is the probability of observing individual survival time $T$ beyond a certain time $t$. To analyze survival data, we define a **survival function** $S(t)$ as
+$$S(t) = \operatorname{Pr}(T > t) = \int_t^\infty f(s) ds$$
+where $T > 0$\
+The Cumulative distribution function of the random variable survival time $T$, F(t) is the probability of observing individual survival time less than a certain time t, we define **CDF of survival time** $F(t)$ as
+$$F(t) = Pr(T \leq t) = 1 - S(t) = 1 - \int_t^{\infty}f(s) ds$$
+The Hazard function, $h(t)$ measures the instantaneous risk of failure at time $t$ giving that a patient has survived until time $t$, defined as the ratio of the probability density function of time variable and Survival function. 
+$$h(t) = \displaystyle{\lim_{\Delta_t \to 0}}\frac{Pr((T\in(t,t+\Delta_t)|T>t)}{\Delta_t} = \frac{f(t)}{S(t)}$$
 
-p2 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
-    geom_path(aes(colour="red"), stat="function", fun=exp_haz)+
-    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_1.5)+
-    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_1.5) +
-    scale_colour_identity("Hazard Function", guide="legend", 
-                          labels = c("Exponential", "Weibull(gamma = 1.5)", "Gompertz (alpha = 1.5)"), 
-                          breaks = c("red", "green", "blue")) +
-    labs(x = "t",
-         y = "h0(t)") + ylim(0,2) 
+## Intro to Proportional hazard model 
+Proportional hazard model is the primary regression model to investigate the effectiveness of treatment $X$ over survival time $T$, where the i-th patient at a time $t$ \
+is\
+$$h_i(t) = h_0(t)e^{x_i\beta}$$
+where
 
-# gamma = 0.05, alpha = 0.05
-exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz_0.05 <- function(t, lambda = 0.5) lambda * 0.05 * t^(0.05 - 1)
-gompertz_haz_0.05 <- function(t, lambda = 0.5) lambda * exp(0.05 * t)
+\begin{itemize}
 
-p3 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
-    geom_path(aes(colour="red"), stat="function", fun=exp_haz) +
-    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_0.05) +
-    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_0.05) +
-    scale_colour_identity("Hazard Function", guide="legend", 
-                          labels = c("Exponential", "Weibull(gamma = 0.05)", "Gompertz (alpha = 0.05)"), 
-                          breaks = c("red", "green", "blue")) +
-    labs(x = "t",
-         y = "h0(t)") + ylim(0,2) 
+\item $h_0(t)$ is the baseline hazard function
 
-(p1/p2/p3)
-```
+\item $x_i$ is is the treatment indicator variable (control = 0, treatment = 1)
 
-## Results and Discussions
+\item $\beta$ is the parameter of interest, which is the log hazard ratio for the treatment effect. $\beta$ measures the relative hazard reduction due to treatment in comparison to the control.
+
+\end{itemize}
+
+The **proportional hazard** can be expressed as ratio of two hazard functions at time t given individuals in different treatment groups, and does not depend on $t$. 
+
+$$\frac{h(t|x_0)}{h(t|x_1)} = e^{\beta({x_0-x_1})}$$
+
+
+There are different ways to formulate the baseline hazard function $h_0(t)$, which lead to different models and estimations. 
+
+## Three Proportional-hazards model
+
+**An exponential proportional-hazards model** assumes the baseline hazard function is a constant $$h_0(t) = \lambda$$ 
+
+**A Weibull proportional-hazards model** assumes the baseline hazard function  follows Weibull distribution, where $$h_0(t) = \lambda\gamma t^{\gamma-1}$$ for $\gamma>0$ 
+
+**A Cox proportional-hazards model** leaves $h_0(t)$ unspecified.
+
+Note that exponential distribution is a special case of Weibull distribution where $\lambda =1$. Hence, among the three models,  the exponential proportional-hazards model is the most restrictive model, while the Cox model is the most general one.
+
+# Methodology
+## Data Generation: derive survival time T
+
+Given:\
+\
+$$H(t)=-\log{(S(t))}$$
+$$S(t)=e^{-H(t)}=e^{\int_t^\infty h(s)ds}$$
+
+Utilize Inverse Transformation Method\
+
+$$T = F^{-1}(U) = H_0^{-1}(\frac{-\log{(U)}}{e^{X\beta}})$$
+where $U\sim U(0,1)$
+
+Thus, we can derive the following table
+
+\begin{center}
+\captionof{table}{Characteristic of Exponential, Weibull and Gompertz distributions}
+\begin{tabular}{|l|l|l|l|}
+\hline 
+ & Distribution   \\ \hline
+ & Exponential & Weibull & Gompertz \\ \hline
+Scale Parameter & $\lambda >0$ & $\lambda >0$ & $\lambda >0$ \\ \hline
+Shape Parameter & $ $          & $\gamma >0 $ & $\alpha \in (-\infty,\infty)$ \\ \hline
+Baseline Hazard function & $h_0(t) = \lambda$ & $h_0(t) = \lambda\gamma t^{\gamma-1}$ & $h_0(t) = \lambda\exp(\alpha t)$ \\ \hline
+Cumulative Baseline Hazard Function  & $H_0(t) = \lambda t$ & $H_0(t) = \lambda t^{\gamma}$ & $H_0(t) = \frac{\lambda}{\alpha}(e^{\alpha t}-1)$ \\ \hline
+Inverse Cumulative Hazard Function & $H^{-1}(t) = \lambda^{-1}t$ & $H^{-1}(t) = (\lambda^{-1}t)^{\frac{1}{\gamma}}$ & $H^{-1}(T) = \frac{1}{\alpha}\log{(1+\frac{\alpha}{\lambda}t)}$ \\ \hline
+Cumulative Distribution Function & $F(t) = 1-e^{t\lambda e^{X\beta}}$ & $F(t) = 1-e^{-\lambda t^\gamma e^{X\beta}}$ & $F(t) = 1-e^{-\frac{\lambda}{\alpha}(e^{\alpha}-1)e^{X\beta}}$\\
+ \hline
+Survival Time $T$ & $T=-\frac{log{(U)}}{\lambda e^{X\beta}}$ & $T=(-\frac{log{(U)}}{\lambda e^{X\beta}})^{\frac{1}{\gamma}}$ & $T=\frac{1}{\alpha}log{[1-\frac{\alpha \log{(U)}}{\lambda e^{X\beta}}]}$ \\
+ \hline
+\end{tabular}
+\end{center}
+
+## Simulation Design
+
+The goal of this simulation study is to evaluate how misspecifying the baseline hazard function influences the estimated treatment effect from 3 models. We generate 4 types of data, Exponential, Weibull, Gompertz, and Mixture distribution to evaluated the model robustness. All simulation data was generated using inverse transformation method and use `simsurv` function in the `simsurv` package to double check the result. The resulting dataset contains time of event (`eventtime`), status indicator (`status`), and treatment group (`trt`) with censored observations. 
+
+\begin{itemize}
+\item Define Random Variable $X$, treatment, from a binomial distribution with $p=0.5$
+\item Generate survival time $T$, time to event, using $X$ and $\beta$
+\item Randomly generate censoring time $C$, from an exponential distribution
+\item We observe either the survival time T or else the censoring time C. 
+Specifically, we observe the random variable $Y$ takes the minimum value between survival time and censoring time
+\end{itemize}
+$$Y =min(T,C)$$
+Create a status indicator variable (1 = event, 0 = censored), if the patient dies before censoring time, then status equals one, vice versa.
+$$
+Status = 
+    \begin{cases}
+      1, & T_{i}\le C_{i} \\
+      0, &  T_{i} > C_{i}
+    \end{cases}
+$$
+
+### Define true treatment effect and parameter
+
+Before running the simulation, also need to define the true treatment effect and parameters
+
+1. True treatment effect $\beta = 2$
+2. 7 different sample size N ranging from 100 to 400 increasing by 50 
+3. Simulate exponential distribution with $\lambda=0.5$
+4. Simulate weibull distribution with $\lambda=0.5$ and $\gamma=2$
+5. Simulate gompertz distribution with $\lambda=0.5$ and $\alpha=2$
+
+### Simulation Times
+
+A large number of simulations can improve the accuracy and efficiency of estimated treatment effect, thus we simulate 1000 times for N sample. Each datasets will be used to fit in three proportional hazard models to obtain the estimated treatment effects 
+
+### Performance Measures
+To compare accuracy and efficiency of estimated treatment effects, we use performance measures such as Bias, Variance, Mean square error, and confidence interval to compare 3 models.
+
+$k$: number of independent datasets
+
+#### Estimation
+
+$$Bias = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)=\frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-2)$$
+$$Variance = \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta^{(k)}}-\beta)^2= \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta^{(k)}}-2)^2$$
+$$MSE = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)^2 = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-2)^2$$
+
+#### Confidence Interval
+
+$$Coverage: \frac{1}{k}\sum_{i=1}^kI\{\beta\in CI^{(k)}\}$$
+
+# Results and Discussion 
+
+The parameters in each model were held constant with $\lambda = 0.5$, $\gamma=2$, $\alpha = 2$, $\beta = 2$. Each scenario are simulated for 1000 times, sample sizes from 100 to 400. The variance was calculated to examine the efficiency of the models. Additionally, MSE and bias were calculated to demonstrate the performance of survival models as the sample size increases. After running the three models in each scenario, a set of $\beta$'s were extracted and used to calculate the 95%  confidence interval for comparison. 
+
+## Scenario 1: Exponential baseline hazard function
+
+Figure 1 shows the variance from an exponential distribution. We can obviously see from the plot that the exponential model has the lowest versatility, whereas the cox model has the largest. 
+
+![](./graphs/1.png)
+\begin{center}
+  Figure 1
+\end{center}
+
+
+Figure 2-3 shows the bias and MSE from the exponential distribution. As the sample size increased, the MSE of all three models decreased. The Cox model had the MSE, whereas the exponential model had the least.  The trend of the bias of the three models switched between increasing and decreasing with the increasing sample size. The Weibull model had the largest bias, and the exponential model had the least bias. Therefore, the exponential model is the most suitable model when fitting the data generated from an exponential distribution.
+
+![](./graphs/2.png)
+\begin{center}
+  Figure 2
+\end{center}
+
+![](./graphs/3.png)
+\begin{center}
+  Figure 3
+\end{center}
+
+
+## Scenario 2: Weibull baseline hazard function
+
+Figure 4 shows the variance from a weibull distribution. The exponential model shows to have the lowest versatility, while the cox model has the largest.
+
+![](./graphs/4.png)
+\begin{center}
+  Figure 4
+\end{center}
+
+Figure 5-6 shows the bias and MSE from the weibull distribution. When looking at the bias plot, the exponential model has the largest bias, while the cox model and Weibull model both perform well with a low bias. From mse plot, weibull fits the data better than cox model when sample size is less than 300, for more than 300, cox and weibull model has a nearly equivalent prediction accuracy. Thus, weibull and cox both fit data from weibull distribution. Cox model outperforms weibull for large sample sizes.
+
+![](./graphs/5.png)
+\begin{center}
+  Figure 5
+\end{center}
+
+![](./graphs/6.png)
+\begin{center}
+  Figure 6
+\end{center}
+
+
+## Scenario 3: Gompertz baseline hazard function
+
+Figure 7 shows the variance from a gomperz distribution. The exponential model shows to have the lowest versatility, while the cox model has the largest. 
+
+![](./graphs/7.png)
+\begin{center}
+  Figure 7
+\end{center}
+
+Figure 8-9 shows the bias and MSE from the weibull distribution. The mse and bias has similar trends under the three models, the cox model performs well with the lowest bias and mse, while exponential performs the worst.
+
+![](./graphs/8.png)
+\begin{center}
+  Figure 8
+\end{center}
+
+![](./graphs/9.png)
+\begin{center}
+  Figure 9
+\end{center}
+
+From above scenarios, we found that for an exponential model, the only case it has the highest prediction accuracy is when the true distribution is a purely exponential. The big difference in performances of exponential models in different distributions shows that it is the least robust against a misspecified distribution. On the other hand, the variance plot shows that the exponential model constantly has the lowest versatility. When the distribution is weibull, both the weibull and cox model performs well. However, when the true distribution is gompertz, only the cox model shows to have the best performance.
+
+Table 1 shows the  95% confidence intervals of three models using 1000 simulations with sample size of 400 and $\beta = 2$.
+
+![](./graphs/table.png)
+\begin{center}
+  Table 1
+\end{center}
+
+With the true baseline hazard as exponential, the exponential proportional model has a narrower  confidence interval  than the other 2 models, and all contain the true beta.
+With a weibull baseline hazard, the weibull model provides the most accurate estimation of the treatment effect as expected, with a narrow confidence interval. Cox performs the second best, with a wider confidence interval, but the exponential model significantly deviates from the true beta and its confidence interval  fails to capture the true beta.
+Under the Gompertz baseline hazard, both exponential and weibull proportional models deviate from the true beta and their 95% confidence intervals fail to include the true beta. The cox model, which makes no assumption about the baseline hazard, fits well. 
+
+# Conclusion
+
+In conclusion, using the appropriate baseline hazard result in the best performance. The exponential model is the most restrictive one, with only one parameter $\lambda$, while the Weibull has an additional $\gamma$. The Cox does not specify a certain baseline hazard function, being the most flexible model. 
+Exponential models tend to have high bias and low variance, in other words, they have lower prediction accuracy and higher efficiency when compared to the other two models. In contrast, the cox model is the most robust and flexible one, it can fit to any kinds of distribution, especially when sample size is large. Apparently, the cox model performed well under scenario 2 and 3. However,cox model also has its weakness in the case of a exponential baseline hazard function as we saw in Scenario 1. We noticed that Cox models needed a large sample size (greater than 300) to perform well.
+
+There are still areas that needed for improvements and exploration. Unlike fitted $\alpha$, $\gamma$, and $\beta$, there is possibilities that the results may vary for different values of the above parameters. Moreover, in our study, we only included one categorical variable, which is the treatment assignment. In real world situations, there also exists other categorical variables, for example, sex that might affect the survival time.
+
+
+
+
+
+# Plot 
+
+# References
+
+# Appendix
+
 
