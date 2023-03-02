@@ -9,105 +9,35 @@ Yi Huang
 
 ``` r
 # parameter and seed
-lambda <- 0.5
 set.seed(2023)
 
-
 # gamma = 2, alpha = 2
-exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz <- function(t, lambda = 0.5, gamma = 2) lambda * gamma * t^(gamma - 1)
-gompertz_haz <- function(t, lambda = 0.5, gamma = 2) lambda * exp(gamma* t)
+exp_haz <- function(t, lambda = 0.5) {lambda * 1 * t^0}
+weibull_haz_2 <- function(t, lambda = 0.5) lambda * 2 * t^(2 - 1)
+gompertz_haz_2 <- function(t, lambda = 0.5) lambda * exp(2* t)
 
-p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
-p <- p + 
-  stat_function(fun = exp_haz, aes(col = "exponential")) + 
-  stat_function(fun = weibull_haz, aes(col = "weibull (gamma = 2)")) + 
-  stat_function(fun = gompertz_haz, aes(col = "pink")) + 
-  xlim(0,5) + 
-  ylim(0,2) + 
-  theme_minimal() + 
-  scale_color_manual(name = "Baseline Hazard Function", 
-                     values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 2)", "Gompertz(alpha = 2)" )) + 
-  theme(legend.position="bottom") + 
-  labs(x = "t", y = "h0(t)")
-
-# gamma = 0.05, alpha = 0.05
-exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz <- function(t, lambda = 0.5, gamma = 0.05) lambda * gamma * t^(gamma - 1)
-gompertz_haz <- function(t, lambda = 0.5, gamma = 0.05) lambda * exp(gamma* t)
-
-p2 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
-p2 <- p2 + 
-  stat_function(fun = exp_haz, aes(col = "exponential")) + 
-  stat_function(fun = weibull_haz, aes(col = "weibull (gamma = 0.05)")) + 
-  stat_function(fun = gompertz_haz, aes(col = "pink")) + 
-  xlim(0,5) + 
-  ylim(0,2) + 
-  theme_minimal() + 
-  scale_color_manual(name = "Baseline Hazard Function", 
-                     values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 0.05)", "Gompertz(alpha = 0.05)" )) + 
-  theme(legend.position="bottom") + 
-  labs(x = "t", y = "h0(t)")
-
-# gamma = 1, alpha = 1
-exp_haz2 <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * gamma * t^(gamma - 1)
-gompertz_haz2 <- function(t, lambda = 0.5, gamma = 1) lambda * exp(gamma* t)
-
-p3 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
-p3 <- p3 + 
-  stat_function(fun = exp_haz2, aes(col = "exponential")) + 
-  stat_function(fun = weibull_haz2, aes(col = "weibull (gamma = 1)")) + 
-  stat_function(fun = gompertz_haz2, aes(col = "pink")) + 
-  xlim(0,5) + 
-  ylim(0,2) + 
-  theme_minimal() + 
-  scale_color_manual(name = "Baseline Hazard Function", 
-                     values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 1)", "Gompertz(alpha = 1)" )) + 
-  theme(legend.position="bottom") + 
-  labs(x = "t", y = "h0(t)")
-
-# gamma = 1.5, alpha = 1.5
-exp_haz3 <- function(t, lambda = 0.5) lambda * 1 * t^0
-weibull_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * gamma * t^(gamma - 1)
-gompertz_haz3 <- function(t, lambda = 0.5, gamma = 1.5) lambda * exp(gamma* t)
-
-p4 <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
-p4 <- p4 + 
-  stat_function(fun = exp_haz3, aes(col = "exponential")) + 
-  stat_function(fun = weibull_haz3, aes(col = "weibull (gamma = 1.5)")) + 
-  stat_function(fun = gompertz_haz3, aes(col = "pink")) + 
-  xlim(0,5) + 
-  ylim(0,2) + 
-  theme_minimal() + 
-  scale_color_manual(name = "Baseline Hazard Function", 
-                     values = c("red", "green", "blue"), 
-                     labels = c("Exponential", "Weibull (gamma = 1.5)", "Gompertz(alpha = 1.5)" )) + 
-  theme(legend.position="bottom") + 
-  labs(x = "t", y = "h0(t)")
-
-(p/p2)
+p1 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
+    geom_path(aes(colour="red"), stat="function", fun=exp_haz)+
+    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_2)+
+    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_2) +
+    scale_colour_identity("Hazard Function", guide="legend", 
+                          labels = c("Exponential", "Weibull(gamma = 2)", "Gompertz (alpha = 2)"), 
+                          breaks = c("red", "green", "blue")) +
+    labs(x = "t",
+         y = "h0(t)") + ylim(0,2)
+p1
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
 
-``` r
-(p3/p4)
-```
-
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-1-2.png" style="display: block; margin: auto;" />
-
-# Simulation for Gompertz
+# Simulation for Gompertz Baseline Hazard Function
 
 - N: sample size 100, 150, 200, 250, 300, 350, 400
 - m: simulation time 1000
 - $\beta$: true treatment effect to be 2
 - $\lambda$: 0.5
-- $\gamma$: 0.05, 1, 1.5, 2
-- $\alpha$: 2
+- $\alpha$: 2 ($\gamma$ in following function represent the shape
+  parameter of gompertz)
 
 ``` r
 #write a fn to simulate gompertz data
@@ -142,92 +72,10 @@ sim_gompertz <- function(k, gamma, N){
 set.seed(2023)
 
 # Create empty dataframe to store results
-sim_gompertz_result1 <- data.frame()
-
-# Simulate 1000 times
-# #gamma=0.05
-# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-# for (i in 1:1000) {
-#   sim_res <- sim_gompertz(gamma = 0.05, N = n)
-#   sim_gompertz_result1 <- rbind(sim_gompertz_result1, sim_res)
-# }
-# }
-# 
-# gompertz_table1 <- sim_gompertz_result1 %>% 
-#   group_by(N) %>%
-#   summarize(mse_exp = mean((exp_beta-2)^2),
-#             mse_weibull = mean((weibull_beta-2)^2),
-#             mse_cox = mean((cox_beta-2)^2),
-#             var_exp = var(exp_beta),
-#             var_weibull = var(weibull_beta),
-#             var_cox = var(cox_beta),
-#             bias_exp = mean(exp_beta-2),
-#             bias_weibull = mean(weibull_beta-2),
-#             bias_cox = mean(cox_beta-2)
-#         
-#   )
-# gompertz_table1
-# 
-# 
-# 
-# 
-# 
-# #gamma=1
-# set.seed(2023)
-# sim_gompertz_result2 <- data.frame()
-# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-# for (i in 1:1000) {
-#   sim_res <- sim_gompertz(gamma = 1, N = n)
-#   sim_gompertz_result2 <- rbind(sim_gompertz_result2, sim_res)
-# }
-# }
-# 
-# gompertz_table2 <- sim_gompertz_result2 %>% 
-#   group_by(N) %>%
-#   summarize(mse_exp = mean((exp_beta-2)^2),
-#             mse_weibull = mean((weibull_beta-2)^2),
-#             mse_cox = mean((cox_beta-2)^2),
-#             var_exp = var(exp_beta),
-#             var_weibull = var(weibull_beta),
-#             var_cox = var(cox_beta),
-#             bias_exp = mean(exp_beta-2),
-#             bias_weibull = mean(weibull_beta-2),
-#             bias_cox = mean(cox_beta-2)
-#         
-#   )
-# gompertz_table2
-# 
-# 
-# 
-# #gamma=1.5
-# set.seed(2023)
-# sim_gompertz_result3 <- data.frame()
-# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-# for (i in 1:1000) {
-#   sim_res <- sim_gompertz(gamma = 1.5, N = n)
-#   sim_gompertz_result3  <- rbind(sim_gompertz_result3 , sim_res)
-# }
-# }
-# 
-# gompertz_table3 <- sim_gompertz_result3  %>% 
-#   group_by(N) %>%
-#   summarize(mse_exp = mean((exp_beta-2)^2),
-#             mse_weibull = mean((weibull_beta-2)^2),
-#             mse_cox = mean((cox_beta-2)^2),
-#             var_exp = var(exp_beta),
-#             var_weibull = var(weibull_beta),
-#             var_cox = var(cox_beta),
-#             bias_exp = mean(exp_beta-2),
-#             bias_weibull = mean(weibull_beta-2),
-#             bias_cox = mean(cox_beta-2)
-#         
-#   )
-# gompertz_table3
-
+sim_gompertz_result4 <- data.frame()
 
 #gamma=2
 set.seed(2023)
-sim_gompertz_result4 <- data.frame()
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_gompertz(gamma = 2, N = n)
@@ -301,7 +149,7 @@ gompertz_bias <- gompertz_table4 %>%
 gompertz_bias
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results/gompertz_bias.pdf", height = 5, width = 8)
@@ -319,7 +167,7 @@ gompertz_var <- gompertz_table4 %>%
 gompertz_var
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-2-2.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-2-2.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results/gompertz_var.pdf", height = 5, width = 8)
@@ -337,14 +185,14 @@ gompertz_mse <- gompertz_table4 %>%
 gompertz_mse
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-2-3.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-2-3.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results/gompertz_mse.pdf", height = 5, width = 8)
 ggsave("results2/gompertz_mse.pdf", height = 5, width = 8)
 ```
 
-# Simulation for Exponential
+# Simulation for Exponential Baseline Hazard Function
 
 - N: sample size 100, 150, 200, 250, 300, 350, 400
 - m: simulation time 1000
@@ -460,7 +308,7 @@ exponential_bias <- exponential_table %>%
 exponential_bias
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/exponential_bias.pdf", height = 5, width = 8)
@@ -477,7 +325,7 @@ exponential_var <- exponential_table %>%
 exponential_var
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/exponential_var.pdf", height = 5, width = 8)
@@ -494,19 +342,19 @@ exponential_mse <- exponential_table %>%
 exponential_mse
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/exponential_mse.pdf", height = 5, width = 8)
 ```
 
-# Simulation for Weibull
+# Simulation for Weibull Baseline Hazard Function
 
 - N: sample size 100, 150, 200, 250, 300, 350, 400
 - m: simulation time 1000
 - $\beta$: true treatment effect to be 2
 - $\lambda$: 0.5
-- $\gamma = \alpha$: 0.05, 1, 1.5, 2
+- $\gamma = \alpha$: 2
 
 ``` r
 #write a fn to simulate weibull data
@@ -541,83 +389,9 @@ sim_weibull <- function(k, gamma, N){
 set.seed(2023)
 
 # Create empty dataframe to store results
-sim_weibull_result1 <- data.frame()
-
-# Simulate 1000 times
-# #gamma=0.05
-# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-# for (i in 1:1000) {
-#   sim_res <- sim_weibull(gamma = 0.05, N = n)
-#   sim_weibull_result1 <- rbind(sim_weibull_result1, sim_res)
-# }
-# }
-# 
-# weibull_table1 <- sim_weibull_result1 %>% 
-#   group_by(N) %>%
-#   summarize(mse_exp = mean((exp_beta-2)^2),
-#             mse_weibull = mean((weibull_beta-2)^2),
-#             mse_cox = mean((cox_beta-2)^2),
-#             var_exp = var(exp_beta),
-#             var_weibull = var(weibull_beta),
-#             var_cox = var(cox_beta),
-#             bias_exp = mean(exp_beta-2),
-#             bias_weibull = mean(weibull_beta-2),
-#             bias_cox = mean(cox_beta-2)
-#         
-#   )
-# weibull_table1
-# 
-# 
-# #gamma=1
-# sim_weibull_result2 <- data.frame()
-# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-# for (i in 1:1000) {
-#   sim_res <- sim_weibull(gamma = 1, N = n)
-#   sim_weibull_result2 <- rbind(sim_weibull_result2, sim_res)
-# }
-# }
-# 
-# weibull_table2 <- sim_weibull_result2 %>% 
-#   group_by(N) %>%
-#   summarize(mse_exp = mean((exp_beta-2)^2),
-#             mse_weibull = mean((weibull_beta-2)^2),
-#             mse_cox = mean((cox_beta-2)^2),
-#             var_exp = var(exp_beta),
-#             var_weibull = var(weibull_beta),
-#             var_cox = var(cox_beta),
-#             bias_exp = mean(exp_beta-2),
-#             bias_weibull = mean(weibull_beta-2),
-#             bias_cox = mean(cox_beta-2)
-#         
-#   )
-# weibull_table2
-# 
-# #gamma=1.5
-# sim_weibull_result3 <- data.frame()
-# for (n in c(100, 150, 200, 250, 300, 350, 400)) {
-# for (i in 1:1000) {
-#   sim_res <- sim_weibull(gamma = 1.5, N = n)
-#   sim_weibull_result3 <- rbind(sim_weibull_result3, sim_res)
-# }
-# }
-# 
-# weibull_table3 <- sim_weibull_result3 %>% 
-#   group_by(N) %>%
-#   summarize(mse_exp = mean((exp_beta-2)^2),
-#             mse_weibull = mean((weibull_beta-2)^2),
-#             mse_cox = mean((cox_beta-2)^2),
-#             var_exp = var(exp_beta),
-#             var_weibull = var(weibull_beta),
-#             var_cox = var(cox_beta),
-#             bias_exp = mean(exp_beta-2),
-#             bias_weibull = mean(weibull_beta-2),
-#             bias_cox = mean(cox_beta-2)
-#         
-#   )
-# weibull_table3
-
-#gamma=2
 sim_weibull_result4 <- data.frame()
+
+# gamma=2
 for (n in c(100, 150, 200, 250, 300, 350, 400)) {
 for (i in 1:1000) {
   sim_res <- sim_weibull(gamma = 2, N = n)
@@ -675,7 +449,7 @@ weibull_bias <- weibull_table4 %>%
 weibull_bias
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/weibull_bias.pdf", height = 5, width = 8)
@@ -692,7 +466,7 @@ weibull_var <- weibull_table4 %>%
 weibull_var
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-4-2.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-4-2.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/weibull_var.pdf", height = 5, width = 8)
@@ -709,7 +483,7 @@ weibull_mse <- weibull_table4 %>%
 weibull_mse
 ```
 
-<img src="P8160_Project1_files/figure-gfm/unnamed-chunk-4-3.png" style="display: block; margin: auto;" />
+<img src="project1_code_files/figure-gfm/unnamed-chunk-4-3.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/weibull_mse.pdf", height = 5, width = 8)
@@ -752,4 +526,6 @@ $$MSE= \frac{1}{k}\sum_{i=1}^k(\hat{\beta_{weibull}^{(k)}}-\beta_{1})^2=\frac{1}
 *Cox Proportional-Hazards Model*:  
 $$MSE= \frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-\beta_{1})^2=\frac{1}{k}\sum_{i=1}^k(\hat{\beta_{cox}^{(k)}}-0.5)^2$$  
 
-## Confidence Interval
+#### Confidence Interval
+
+$$Coverage: \frac{1}{k}\sum_{i=1}^kI\{\beta\in CI^{(k)}\}$$
