@@ -138,7 +138,7 @@ $$MSE = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)^2 = \frac{1}{k}\sum_{i=
 
 #### Confidence Interval
 
-$$Coverage: \frac{1}{k}\sum_{i=1}^kI{\beta\in CI^{(k)}}$$
+$$Coverage: \frac{1}{k}\sum_{i=1}^kI\{\beta\in CI^{(k)}\}$$
 
 # Plot 
 
