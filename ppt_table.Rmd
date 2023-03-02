@@ -25,8 +25,11 @@ Shape Parameter & $ $          & $\gamma >0 $ & $\alpha \in (-\infty,\infty)$ \\
 Baseline Hazard function & $h_0(t) = \lambda$ & $h_0(t) = \lambda\gamma t^{\gamma-1}$ & $h_0(t) = \lambda\exp(\alpha t)$ \\ \hline
 Cumulative Baseline Hazard Function  & $H_0(t) = \lambda t$ & $H_0(t) = \lambda t^{\gamma}$ & $H_0(t) = \frac{\lambda}{\alpha}(e^{\alpha t}-1)$ \\ \hline
 Inverse Cumulative Hazard Function & $H^{-1}(t) = \lambda^{-1}t$ & $H^{-1}(t) = (\lambda^{-1}t)^{\frac{1}{\gamma}}$ & $H^{-1}(T) = \frac{1}{\alpha}\log{(1+\frac{\alpha}{\lambda}t)}$ \\ \hline
+Cumulative Distribution Function & $F(t) = 1-e^{t\lambda e^{X\beta}}$ & $F(t) = 1-e^{-\lambda t^\gamma e^{X\beta}}$ & $F(t) = 1-e^{-\frac{\lambda}{\alpha}(e^{\alpha}-1)e^{X\beta}}$\\
+ \hline
 Survival Time $T$ & $T=-\frac{log{(U)}}{\lambda e^{X\beta}}$ & $T=(-\frac{log{(U)}}{\lambda e^{X\beta}})^{\frac{1}{\gamma}}$ & $T=\frac{1}{\alpha}log{[1-\frac{\alpha \log{(U)}}{\lambda e^{X\beta}}]}$ \\
  \hline
+
 \end{tabular}
 \end{center}
 

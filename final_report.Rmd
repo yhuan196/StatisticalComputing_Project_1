@@ -22,6 +22,8 @@ header-includes:
 - \fancypagestyle{plain}{\pagestyle{fancy}}
 - \usepackage{hyperref}
 - \AtBeginDocument{\addtocontents{toc}{\protect\hypertarget{mylink}{}\hspace{0.25in}\hspace{0.5in}\par}}
+- \usepackage{placeins}
+- \usepackage{caption}
 --- 
 
 ```{r setup, include=FALSE}
@@ -45,6 +47,7 @@ The objective is to design a simulation study to compare and contrast the effici
 
 # Background
 
+## Survival function, CDF of survival time, hazard function
 Survival function, $S(t)$ is the probability of observing individual survival time $T$ beyond a certain time $t$. To analyze survival data, we define a **survival function** $S(t)$ as
 $$S(t) = \operatorname{Pr}(T > t) = \int_t^\infty f(s) ds$$
 where $T > 0$\
@@ -53,7 +56,7 @@ $$F(t) = Pr(T \leq t) = 1 - S(t) = 1 - \int_t^{\infty}f(s) ds$$
 The Hazard function, $h(t)$ measures the instantaneous risk of failure at time $t$ giving that a patient has survived until time $t$, defined as the ratio of the probability density function of time variable and Survival function. 
 $$h(t) = \displaystyle{\lim_{\Delta_t \to 0}}\frac{Pr((T\in(t,t+\Delta_t)|T>t)}{\Delta_t} = \frac{f(t)}{S(t)}$$
 
-
+## Intro to Proportional hazard model 
 Proportional hazard model is the primary regression model to investigate the effectiveness of treatment $X$ over survival time $T$, where the i-th patient at a time $t$ \
 is\
 $$h_i(t) = h_0(t)e^{x_i\beta}$$
@@ -76,6 +79,8 @@ $$\frac{h(t|x_0)}{h(t|x_1)} = e^{\beta({x_0-x_1})}$$
 
 There are different ways to formulate the baseline hazard function $h_0(t)$, which lead to different models and estimations. 
 
+## Three Proportional-hazards model
+
 **An exponential proportional-hazards model** assumes the baseline hazard function is a constant $$h_0(t) = \lambda$$ 
 
 **A Weibull proportional-hazards model** assumes the baseline hazard function  follows Weibull distribution, where $$h_0(t) = \lambda\gamma t^{\gamma-1}$$ for $\gamma>0$ 
@@ -87,10 +92,39 @@ Note that exponential distribution is a special case of Weibull distribution whe
 # Methodology
 ## Data Generation: derive survival time T
 
+Given:\
+\
+$$H(t)=-\log{(S(t))}$$
+$$S(t)=e^{-H(t)}=e^{\int_t^\infty h(s)ds}$$
+
+Apply Inverse Transformation Method\
+
+$$T = F^{-1}(U) = H_0^{-1}(\frac{-\log{(U)}}{e^{X\beta}})$$
+where $U\sim U(0,1)$$
+
+Thus, we can derive the following table
+
+\begin{center}
+\captionof{table}{Characteristic of Exponential, Weibull and Gompertz distributions}
+\begin{tabular}{|l|l|l|l|}
+\hline 
+ & Distribution   \\ \hline
+ & Exponential & Weibull & Gompertz \\ \hline
+Scale Parameter & $\lambda >0$ & $\lambda >0$ & $\lambda >0$ \\ \hline
+Shape Parameter & $ $          & $\gamma >0 $ & $\alpha \in (-\infty,\infty)$ \\ \hline
+Baseline Hazard function & $h_0(t) = \lambda$ & $h_0(t) = \lambda\gamma t^{\gamma-1}$ & $h_0(t) = \lambda\exp(\alpha t)$ \\ \hline
+Cumulative Baseline Hazard Function  & $H_0(t) = \lambda t$ & $H_0(t) = \lambda t^{\gamma}$ & $H_0(t) = \frac{\lambda}{\alpha}(e^{\alpha t}-1)$ \\ \hline
+Inverse Cumulative Hazard Function & $H^{-1}(t) = \lambda^{-1}t$ & $H^{-1}(t) = (\lambda^{-1}t)^{\frac{1}{\gamma}}$ & $H^{-1}(T) = \frac{1}{\alpha}\log{(1+\frac{\alpha}{\lambda}t)}$ \\ \hline
+Cumulative Distribution Function & $F(t) = 1-e^{t\lambda e^{X\beta}}$ & $F(t) = 1-e^{-\lambda t^\gamma e^{X\beta}}$ & $F(t) = 1-e^{-\frac{\lambda}{\alpha}(e^{\alpha}-1)e^{X\beta}}$\\
+ \hline
+Survival Time $T$ & $T=-\frac{log{(U)}}{\lambda e^{X\beta}}$ & $T=(-\frac{log{(U)}}{\lambda e^{X\beta}})^{\frac{1}{\gamma}}$ & $T=\frac{1}{\alpha}log{[1-\frac{\alpha \log{(U)}}{\lambda e^{X\beta}}]}$ \\
+ \hline
+\end{tabular}
+\end{center}
 
 ## Simulation Design
 
-The goal of this simulation study is to evaluate how misspecifying the baseline hazard function influences the estimated treatment effect from 3 models. We generate 4 types of data, Exponential, Weibull, Gompertz, and Mixture distribution to evaluated the model robustness. All simulation data was generated using inverse transformation method and use`simsurv` function in the `simsurv` package to double check the result. The resulting dataset contains time of event (`eventtime`), status indicator (`status`), and treatment group (`trt`) with censored observations. 
+The goal of this simulation study is to evaluate how misspecifying the baseline hazard function influences the estimated treatment effect from 3 models. We generate 4 types of data, Exponential, Weibull, Gompertz, and Mixture distribution to evaluated the model robustness. All simulation data was generated using inverse transformation method and use `simsurv` function in the `simsurv` package to double check the result. The resulting dataset contains time of event (`eventtime`), status indicator (`status`), and treatment group (`trt`) with censored observations. 
 
 \begin{itemize}
 \item Define Random Variable $X$, treatment, from a binomial distribution with $p=0.5$
