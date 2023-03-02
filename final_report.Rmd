@@ -84,9 +84,8 @@ There are different ways to formulate the baseline hazard function $h_0(t)$, whi
 
 Note that exponential distribution is a special case of Weibull distribution where $\lambda =1$. Hence, among the three models,  the exponential proportional-hazards model is the most restrictive model, while the Cox model is the most general one.
 
-
 # Methodology
-
+## Design Simluation
 
 ## Section 1
 ## Section 2
