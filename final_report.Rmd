@@ -90,9 +90,7 @@ Note that exponential distribution is a special case of Weibull distribution whe
 
 ## Simulation Design
 
-### To start this simulation
-The goal of this simulation study is to evaluate how misspecifying the baseline hazard function influences the estimated treatment effect from 3 models.
-We generate 4 types of data, Exponential, Weibull, Gompertz, and Mixture distribution to evaluated the model robustness.
+The goal of this simulation study is to evaluate how misspecifying the baseline hazard function influences the estimated treatment effect from 3 models. We generate 4 types of data, Exponential, Weibull, Gompertz, and Mixture distribution to evaluated the model robustness. All simulation data was generated using inverse transformation method and use`simsurv` function in the `simsurv` package to double check the result. The resulting dataset contains time of event (`eventtime`), status indicator (`status`), and treatment group (`trt`) with censored observations. 
 
 \begin{itemize}
 \item Define Random Variable $X$, treatment, from a binomial distribution with $p=0.5$
@@ -128,7 +126,7 @@ A large number of simulations can improve the accuracy and efficiency of estimat
 ### Performance Measures
 To compare accuracy and efficiency of estimated treatment effects, we use performance measures such as Bias, Variance, Mean square error, and confidence interval to compare 3 models.
 
-**$k$: number of independent datasets**
+$k$: number of independent datasets
 
 #### Estimation
 
