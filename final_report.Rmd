@@ -180,20 +180,23 @@ The parameters in each model were held constant with $\lambda = 0.5$, $\gamma=2$
 
 Figure 1 shows the variance from an exponential distribution. We can obviously see from the plot that the exponential model has the lowest versatility, whereas the cox model has the largest. 
 
-![](./graphs/1.png)
+
+![](./graphs/1.png){width=80% height=130%}
 \begin{center}
-  Figure 1
+Figure 1
 \end{center}
 
 
 Figure 2-3 shows the bias and MSE from the exponential distribution. As the sample size increased, the MSE of all three models decreased. The Cox model had the MSE, whereas the exponential model had the least.  The trend of the bias of the three models switched between increasing and decreasing with the increasing sample size. The Weibull model had the largest bias, and the exponential model had the least bias. Therefore, the exponential model is the most suitable model when fitting the data generated from an exponential distribution.
 
-![](./graphs/2.png)
+
+![](./graphs/2.png){width=80% height=130%}
 \begin{center}
   Figure 2
 \end{center}
 
-![](./graphs/3.png)
+
+![](./graphs/3.png){width=80% height=130%}
 \begin{center}
   Figure 3
 \end{center}
@@ -203,19 +206,22 @@ Figure 2-3 shows the bias and MSE from the exponential distribution. As the samp
 
 Figure 4 shows the variance from a weibull distribution. The exponential model shows to have the lowest versatility, while the cox model has the largest.
 
-![](./graphs/4.png)
+
+![](./graphs/4.png){width=80% height=130%}
 \begin{center}
   Figure 4
 \end{center}
 
 Figure 5-6 shows the bias and MSE from the weibull distribution. When looking at the bias plot, the exponential model has the largest bias, while the cox model and Weibull model both perform well with a low bias. From mse plot, weibull fits the data better than cox model when sample size is less than 300, for more than 300, cox and weibull model has a nearly equivalent prediction accuracy. Thus, weibull and cox both fit data from weibull distribution. Cox model outperforms weibull for large sample sizes.
 
-![](./graphs/5.png)
+
+![](./graphs/5.png){width=80% height=130%}
 \begin{center}
   Figure 5
 \end{center}
 
-![](./graphs/6.png)
+
+![](./graphs/6.png){width=80% height=130%}
 \begin{center}
   Figure 6
 \end{center}
@@ -225,19 +231,20 @@ Figure 5-6 shows the bias and MSE from the weibull distribution. When looking at
 
 Figure 7 shows the variance from a gomperz distribution. The exponential model shows to have the lowest versatility, while the cox model has the largest. 
 
-![](./graphs/7.png)
+
+![](./graphs/7.png){width=80% height=130%}
 \begin{center}
   Figure 7
 \end{center}
 
 Figure 8-9 shows the bias and MSE from the weibull distribution. The mse and bias has similar trends under the three models, the cox model performs well with the lowest bias and mse, while exponential performs the worst.
 
-![](./graphs/8.png)
+![](./graphs/8.png){width=80% height=130%}
 \begin{center}
   Figure 8
 \end{center}
 
-![](./graphs/9.png)
+![](./graphs/9.png){width=80% height=130%}
 \begin{center}
   Figure 9
 \end{center}
@@ -245,6 +252,7 @@ Figure 8-9 shows the bias and MSE from the weibull distribution. The mse and bia
 From above scenarios, we found that for an exponential model, the only case it has the highest prediction accuracy is when the true distribution is a purely exponential. The big difference in performances of exponential models in different distributions shows that it is the least robust against a misspecified distribution. On the other hand, the variance plot shows that the exponential model constantly has the lowest versatility. When the distribution is weibull, both the weibull and cox model performs well. However, when the true distribution is gompertz, only the cox model shows to have the best performance.
 
 Table 1 shows the  95% confidence intervals of three models using 1000 simulations with sample size of 400 and $\beta = 2$.
+
 
 ![](./graphs/table.png)
 \begin{center}
