@@ -121,6 +121,28 @@ mseplot=ggplot(mse, aes(x = n, y = MSE, color = fit_method)) +
 
 ```
 
+
+```{r}
+var = sim %>% 
+  select(-data, -rep) %>%
+  group_by(n) %>% 
+  summarize(
+    exp = var(b_exp),
+    weibullr = var(b_weibull),
+    cox = var(b_cox)
+  ) %>% 
+  pivot_longer("exp":"cox", names_to = "fit_method", values_to = "variance") %>% 
+  mutate(fit_method = as.factor(fit_method))
+
+
+ggplot(var, aes(x = n, y = variance, color = fit_method)) +
+  geom_point(size = .3) +
+  geom_line(size = .3) +
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+
+```
+
+
 ```{r}
 
 biasplot+mseplot
