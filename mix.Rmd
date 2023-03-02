@@ -1,0 +1,25 @@
+---
+title: "mix"
+output: html_document
+date: "2023-03-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+simdata = function(n, p, lambda = 0.5, gamma = 1.5, eff = list()) {
+  x1 = rbinom(n, 1, 0.5)
+  u = runif(n)
+  useExp = runif(n) < p 
+  t =  useExp * (-log(u) / (lambda * exp(eff$b1 * x1))) + (1 - useExp) * (-log(u) / (lambda * exp(eff$b1 * x1)))^(1 / gamma)
+  t[t < 1/365] = 1/365
+  t[t == 1 / 365] = t[t == 1 / 365] + rnorm(length(t[t == 1 / 365]), 0, 1e-4)
+  t = abs(t)
+  e = as.numeric(t < 5)
+  t = pmin(t, 5)
+  name = paste("n =", n, ", p =", p, ", eff =", eff[[1]])
+  return(tibble(name = name, time = t, event = e, x1 = x1))
+}
+```
