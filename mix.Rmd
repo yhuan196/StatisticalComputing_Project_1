@@ -8,18 +8,248 @@ date: "2023-03-02"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r}
-simdata = function(n, p, lambda = 0.5, gamma = 1.5, eff = list()) {
-  x1 = rbinom(n, 1, 0.5)
+library(tidyverse)
+library(survival)
+library(patchwork)
+
+```
+
+```{r}
+set.seed(2023)
+simdata = function(n, p, lambda = 0.5, gamma = 2, alpha=2,b1) {
+  x = rbinom(n, 1, 0.5)
   u = runif(n)
-  useExp = runif(n) < p 
-  t =  useExp * (-log(u) / (lambda * exp(eff$b1 * x1))) + (1 - useExp) * (-log(u) / (lambda * exp(eff$b1 * x1)))^(1 / gamma)
-  t[t < 1/365] = 1/365
-  t[t == 1 / 365] = t[t == 1 / 365] + rnorm(length(t[t == 1 / 365]), 0, 1e-4)
-  t = abs(t)
-  e = as.numeric(t < 5)
-  t = pmin(t, 5)
-  name = paste("n =", n, ", p =", p, ", eff =", eff[[1]])
-  return(tibble(name = name, time = t, event = e, x1 = x1))
+  ue = runif(n) < p 
+  time =  ue * (-log(u) / (lambda * exp(b1 * x))) + (1 - ue) * (-log(u) / (lambda * exp(b1 * x)))^(1 / gamma)
+  time[time < 1/365] = 1/365
+  time[time == 1 / 365] = time[time == 1 / 365] + rnorm(length(time[time == 1 / 365]), 0, 1e-4)
+  time = abs(time)
+  e = as.numeric(time < 5)
+  time = pmin(time, 5)
+  
+  survival_data = data.frame(id=1:n,
+                             time = time,
+                             x = x,
+                             event=e)
 }
+```
+
+```{r, echo=FALSE}
+set.seed(2023)
+fit_exp = function(df) {
+  fit.exponential = survreg(Surv(time, event) ~ x, dist = "exponential", data = df)
+  return(as.numeric(-fit.exponential$coefficients[-1]))
+}
+fit_weibull = function(df) {
+  fit.weibull <- survreg(Surv(time, event) ~ x, dist = "weibull", data = df)
+  return(as.numeric(-fit.weibull$coefficients[-1] / fit.weibull$scale))
+}
+fit_cox = function(df) {
+  fit.cox <- coxph(Surv(time, event) ~ x, data = df)
+  return(as.numeric(fit.cox$coefficients))
+}
+```
+
+
+```{r, echo=FALSE, warning=FALSE, fig.height=5}
+set.seed(2023)
+set = expand.grid(p = 0.5, n = c(100, 150, 200, 250, 300, 350, 400), rep = 1:1000)
+
+sim = set %>% 
+  mutate(
+    data = map2(n, p, ~simdata(n = .x, p = .y, b1=2))) %>%
+   
+  mutate(
+    b_exp = map_dbl(data, fit_exp),
+    b_weibull = map_dbl(data, fit_weibull),
+    b_cox = map_dbl(data, fit_cox)
+  )
+
+
+```
+
+```{r}
+bias = sim %>% 
+  select(-data, -rep) %>% 
+  mutate(
+    b_exp = b_exp - 2, 
+    b_weibull = b_weibull -2,
+    b_cox = b_cox -2
+  ) %>% 
+  group_by(n) %>% 
+  summarize(
+    exp_bias = mean(b_exp),
+    weibull_bias = mean(b_weibull),
+    cox_bias = mean(b_cox)
+  ) %>% 
+  pivot_longer("exp_bias":"cox_bias", names_to = "fit_method", values_to = "bias") %>% 
+  mutate(fit_method = as.factor(fit_method)) 
+
+biasplot=ggplot(bias, aes(x = n, y = bias, color = fit_method)) +
+  geom_point(size = .3) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))+
+  theme(legend.position = "none")
+
+```
+
+```{r}
+mse = sim %>% 
+  select(-data, -rep) %>%
+  mutate(
+    b_exp = (b_exp - 2)^2, 
+    b_weibull = (b_weibull -2)^2,
+    b_cox = (b_cox -2)^2
+  ) %>% 
+  group_by(n) %>% 
+  summarize(
+    exp_mse = mean(b_exp),
+    weibull_mse = mean(b_weibull),
+    cox_mse = mean(b_cox)
+  ) %>% 
+  pivot_longer("exp_mse":"cox_mse", names_to = "fit_method", values_to = "MSE") %>% 
+  mutate(fit_method = as.factor(fit_method)) 
+
+mseplot=ggplot(mse, aes(x = n, y = MSE, color = fit_method)) +
+  geom_point(size = .3) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+
+```
+
+```{r}
+
+biasplot+mseplot
+ggsave(file="results/weibullexp.pdf",width=8,height=5)
+
+
+```
+
+
+```{r}
+set.seed(2023)
+simdata = function(n, p, lambda = 0.5, gamma = 2, alpha=2,b1) {
+  x = rbinom(n, 1, 0.5)
+  u = runif(n)
+  ue = runif(n) < p 
+  time =  ue * (-log(u) / (lambda * exp(b1 * x))) + (1 - ue) * (-log(u) / (lambda * exp(b1 * x)))^(1 / gamma)
+  time[time < 1/365] = 1/365
+  time[time == 1 / 365] = time[time == 1 / 365] + rnorm(length(time[time == 1 / 365]), 0, 1e-4)
+  time = abs(time)
+  e = as.numeric(time < 5)
+  time = pmin(time, 5)
+  
+  survival_data = data.frame(id=1:n,
+                             time = time,
+                             x = x,
+                             event=e)
+  
+}
+```
+
+```{r}
+set.seed(2023)
+simdata2 = function(n, p, lambda = 0.5, gamma = 2, alpha=2,b1) {
+  x = rbinom(n, 1, 0.5)
+  u = runif(n)
+  ue = runif(n) < p 
+  time =  ue * (-log(u) / (lambda * exp(b1 * x))) + (1 - ue) * (1/alpha) * log(1 - (alpha*log(u) / (lambda * exp(b1 * x))))
+  time[time < 1/365] = 1/365
+  time[time == 1 / 365] = time[time == 1 / 365] + rnorm(length(time[time == 1 / 365]), 0, 1e-4)
+  time = abs(time)
+  e = as.numeric(time < 5)
+  time = pmin(time, 5)
+  
+  survival_data = data.frame(id=1:n,
+                             time = time,
+                             x = x,
+                             event=e)
+}
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE, fig.height=5}
+set.seed(2023)
+set1 = expand.grid(p = 0.5, n = c(100, 150, 200, 250, 300, 350, 400), rep = 1:1000)
+
+sim1 = set %>% 
+  mutate(
+    data = map2(n, p, ~simdata2(n = .x, p = .y, b1=2))) %>%
+   
+  mutate(
+    b_exp = map_dbl(data, fit_exp),
+    b_weibull = map_dbl(data, fit_weibull),
+    b_cox = map_dbl(data, fit_cox)
+  )
+
+```
+
+```{r}
+bias1 = sim1 %>% 
+  select(-data, -rep) %>% 
+  mutate(
+    b_exp = b_exp - 2, 
+    b_weibull = b_weibull -2,
+    b_cox = b_cox -2
+  ) %>% 
+  group_by(n) %>% 
+  summarize(
+    exp_bias = mean(b_exp),
+    weibull_bias = mean(b_weibull),
+    cox_bias = mean(b_cox)
+  ) %>% 
+  pivot_longer("exp_bias":"cox_bias", names_to = "fit_method", values_to = "bias") %>% 
+  mutate(fit_method = as.factor(fit_method)) 
+
+biasplot1=ggplot(bias, aes(x = n, y = bias, color = fit_method)) +
+  geom_point(size = .3) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))+
+  theme(legend.position = "none")
+
+```
+
+```{r}
+
+mse1 = sim1 %>% 
+  select(-data, -rep) %>%
+  mutate(
+    b_exp = (b_exp - 2)^2, 
+    b_weibull = (b_weibull -2)^2,
+    b_cox = (b_cox -2)^2
+  ) %>% 
+  group_by(n) %>% 
+  summarize(
+    exp_mse = mean(b_exp),
+    weibull_mse = mean(b_weibull),
+    cox_mse = mean(b_cox)
+  ) %>% 
+  pivot_longer("exp_mse":"cox_mse", names_to = "fit_method", values_to = "MSE") %>% 
+  mutate(fit_method = as.factor(fit_method)) 
+
+mseplot1=ggplot(mse, aes(x = n, y = MSE, color = fit_method)) +
+  geom_point(size = .3) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+
+
+```
+
+```{r}
+
+biasplot1+mseplot1
+ggsave(file="results/coxexp.pdf",width=8,height=5)
+
+
+```
+
+
+
 ```
