@@ -1,7 +1,7 @@
 ---
 title: "P8160 Project 1 Final Report" 
 subtitle: "A Simulation Study to Compare Three Survival Models"
-date: ""
+date: "March 3, 2023"
 author: "Jingchen Chai, Yi Huang, Ruihan Zhang"
 output:
   pdf_document:
@@ -85,10 +85,60 @@ There are different ways to formulate the baseline hazard function $h_0(t)$, whi
 Note that exponential distribution is a special case of Weibull distribution where $\lambda =1$. Hence, among the three models,  the exponential proportional-hazards model is the most restrictive model, while the Cox model is the most general one.
 
 # Methodology
-## Design Simluation
+## Data Generation: derive survival time T
 
-## Section 1
-## Section 2
+
+## Simulation Design
+
+### To start this simulation
+The goal of this simulation study is to evaluate how misspecifying the baseline hazard function influences the estimated treatment effect from 3 models.
+We generate 4 types of data, Exponential, Weibull, Gompertz, and Mixture distribution to evaluated the model robustness.
+
+\begin{itemize}
+\item Define Random Variable $X$, treatment, from a binomial distribution with $p=0.5$
+\item Generate survival time $T$, time to event, using $X$ and $\beta$
+\item Randomly generate censoring time $C$, from an exponential distribution
+\item We observe either the survival time T or else the censoring time C. 
+Specifically, we observe the random variable $Y$ takes the minimum value between survival time and censoring time
+\end{itemize}
+$$Y =min(T,C)$$
+Create a status indicator variable (1 = event, 0 = censored), if the patient dies before censoring time, then status equals one, vice versa.
+$$
+Status = 
+    \begin{cases}
+      1, & T_{i}\le C_{i} \\
+      0, &  T_{i} > C_{i}
+    \end{cases}
+$$
+
+### Define true treatment effect and parameter
+
+Before running the simulation, also need to define the true treatment effect and parameters
+
+1. True treatment effect $\beta = 2$
+2. 7 different sample size N ranging from 100 to 400 increasing by 50 
+3. Simulate exponential distribution with $\lambda=0.5$
+4. Simulate weibull distribution with $\lambda=0.5$ and $\gamma=2$
+5. Simulate gompertz distribution with $\lambda=0.5$ and $\alpha=2$
+
+### Simulation Times
+
+A large number of simulations can improve the accuracy and efficiency of estimated treatment effect, thus we simulate 1000 times for N sample. Each datasets will be used to fit in three proportional hazard models to obtain the estimated treatment effects 
+
+### Performance Measures
+To compare accuracy and efficiency of estimated treatment effects, we use performance measures such as Bias, Variance, Mean square error, and confidence interval to compare 3 models.
+
+**$k$: number of independent datasets**
+
+#### Estimation
+
+$$Bias = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)=\frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-2)$$
+$$Variance = \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta^{(k)}}-\beta)^2= \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta^{(k)}}-2)^2$$
+$$MSE = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)^2 = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-2)^2$$
+
+#### Confidence Interval
+
+$$Coverage: \frac{1}{k}\sum_{i=1}^kI{\beta\in CI^{(k)}}$$
 
 # Plot 
 
