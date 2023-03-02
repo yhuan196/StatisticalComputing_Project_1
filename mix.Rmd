@@ -80,12 +80,12 @@ bias = sim %>%
   ) %>% 
   group_by(n) %>% 
   summarize(
-    exp_bias = mean(b_exp),
-    weibull_bias = mean(b_weibull),
-    cox_bias = mean(b_cox)
+    exp = mean(b_exp),
+    weibull = mean(b_weibull),
+    cox = mean(b_cox)
   ) %>% 
-  pivot_longer("exp_bias":"cox_bias", names_to = "fit_method", values_to = "bias") %>% 
-  mutate(fit_method = as.factor(fit_method)) 
+  pivot_longer("exp":"cox", names_to = "fit_method", values_to = "bias") %>% 
+  mutate(fit_method = as.factor(fit_method))  
 
 biasplot=ggplot(bias, aes(x = n, y = bias, color = fit_method)) +
   geom_point(size = .3) +
@@ -106,11 +106,11 @@ mse = sim %>%
   ) %>% 
   group_by(n) %>% 
   summarize(
-    exp_mse = mean(b_exp),
-    weibull_mse = mean(b_weibull),
-    cox_mse = mean(b_cox)
+    exp = mean(b_exp),
+    weibull = mean(b_weibull),
+    cox = mean(b_cox)
   ) %>% 
-  pivot_longer("exp_mse":"cox_mse", names_to = "fit_method", values_to = "MSE") %>% 
+  pivot_longer("exp":"cox", names_to = "fit_method", values_to = "MSE") %>% 
   mutate(fit_method = as.factor(fit_method)) 
 
 mseplot=ggplot(mse, aes(x = n, y = MSE, color = fit_method)) +
@@ -130,26 +130,7 @@ ggsave(file="results/weibullexp.pdf",width=8,height=5)
 ```
 
 
-```{r}
-set.seed(2023)
-simdata = function(n, p, lambda = 0.5, gamma = 2, alpha=2,b1) {
-  x = rbinom(n, 1, 0.5)
-  u = runif(n)
-  ue = runif(n) < p 
-  time =  ue * (-log(u) / (lambda * exp(b1 * x))) + (1 - ue) * (-log(u) / (lambda * exp(b1 * x)))^(1 / gamma)
-  time[time < 1/365] = 1/365
-  time[time == 1 / 365] = time[time == 1 / 365] + rnorm(length(time[time == 1 / 365]), 0, 1e-4)
-  time = abs(time)
-  e = as.numeric(time < 5)
-  time = pmin(time, 5)
-  
-  survival_data = data.frame(id=1:n,
-                             time = time,
-                             x = x,
-                             event=e)
-  
-}
-```
+
 
 ```{r}
 set.seed(2023)
@@ -199,11 +180,11 @@ bias1 = sim1 %>%
   ) %>% 
   group_by(n) %>% 
   summarize(
-    exp_bias = mean(b_exp),
-    weibull_bias = mean(b_weibull),
-    cox_bias = mean(b_cox)
+    exp = mean(b_exp),
+    weibull = mean(b_weibull),
+    cox = mean(b_cox)
   ) %>% 
-  pivot_longer("exp_bias":"cox_bias", names_to = "fit_method", values_to = "bias") %>% 
+  pivot_longer("exp":"cox", names_to = "fit_method", values_to = "bias") %>% 
   mutate(fit_method = as.factor(fit_method)) 
 
 biasplot1=ggplot(bias, aes(x = n, y = bias, color = fit_method)) +
@@ -212,7 +193,7 @@ biasplot1=ggplot(bias, aes(x = n, y = bias, color = fit_method)) +
   xlab("sample size") +
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))+
   theme(legend.position = "none")
-
+biasplot1
 ```
 
 ```{r}
@@ -226,11 +207,11 @@ mse1 = sim1 %>%
   ) %>% 
   group_by(n) %>% 
   summarize(
-    exp_mse = mean(b_exp),
-    weibull_mse = mean(b_weibull),
-    cox_mse = mean(b_cox)
+    exp = mean(b_exp),
+    weibull = mean(b_weibull),
+    cox = mean(b_cox)
   ) %>% 
-  pivot_longer("exp_mse":"cox_mse", names_to = "fit_method", values_to = "MSE") %>% 
+  pivot_longer("exp":"cox", names_to = "fit_method", values_to = "MSE") %>% 
   mutate(fit_method = as.factor(fit_method)) 
 
 mseplot1=ggplot(mse, aes(x = n, y = MSE, color = fit_method)) +

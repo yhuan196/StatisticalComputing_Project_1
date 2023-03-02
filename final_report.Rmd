@@ -284,7 +284,16 @@ Under the Gompertz baseline hazard, both exponential and weibull proportional mo
 
 ### Mix Distribution
 
-In this case, we tried to 
+In this case, we tried to mix exponential and weibull distribution together, each distribution constitute half. Similar with the above 3 three scenarios, we simulated the mix distribution for 1000 yimes, sample sizes from 100 to 400, parameters in each model were held constant with $\lambda = 0.5$, $\gamma=2$, $\alpha = 2$, $\beta = 2$.
+
+Figure 10 shows the bias and MSE of the mix distribution. From the bias plot, the exponential model has the poorest performance, while cox model has a relatively low bias. When looking at the MSE plot, exponential still shows to have a high MSE. Weibull model tend to have a better perfromace when the sample size is small, when sample szie exceed 250, the cox model show tp have better preditction accuracy than weibull model.
+
+```{r,echo=FALSE,out.width='80%',out.height='130%',fig.align='center'}
+knitr::include_graphics("graphs/mix.png")
+```
+\begin{center}
+Figure 10
+\end{center}
 
 # Conclusion
 
