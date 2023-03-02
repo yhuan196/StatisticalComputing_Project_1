@@ -97,10 +97,10 @@ Given:\
 $$H(t)=-\log{(S(t))}$$
 $$S(t)=e^{-H(t)}=e^{\int_t^\infty h(s)ds}$$
 
-Apply Inverse Transformation Method\
+Utilize Inverse Transformation Method\
 
 $$T = F^{-1}(U) = H_0^{-1}(\frac{-\log{(U)}}{e^{X\beta}})$$
-where $U\sim U(0,1)$$
+where $U\sim U(0,1)$
 
 Thus, we can derive the following table
 
@@ -172,6 +172,16 @@ $$MSE = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)^2 = \frac{1}{k}\sum_{i=
 
 $$Coverage: \frac{1}{k}\sum_{i=1}^kI\{\beta\in CI^{(k)}\}$$
 
+# Results and Discussion 
+
+The parameters in each model were held constant with $\lambda = 0.5$, $\gamma=2$, $\alpha = 2$, $\beta = 2$. Each scenario are simulated for 1000 times, sample sizes from 100 to 400. The variance was calculated to examine the efficiency of the models. Additionally, MSE and bias were calculated to demonstrate the performance of survival models as the sample size increases. After running the three models in each scenario, a set of $\beta$'s were extracted and used to calculate the 95%  confidence interval for comparison. 
+
+# Conclusion
+
 # Plot 
+
+# References
+
+# Appendix
 
 
