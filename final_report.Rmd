@@ -1,0 +1,85 @@
+---
+title: "P8160 Project 1 Final Report" 
+author: "Jingchen Chai, Yi Huang, Ruihan Zhang"
+output:
+  github_document:
+    default
+  pdf_document:
+    toc: yes
+    toc_depth: 2
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '2'
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyhead[R]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+--- 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(ggplot2)
+library(patchwork)
+```
+
+
+# Plot of Baseline Hazard Function
+
+```{r}
+# parameter and seed
+set.seed(2023)
+
+# gamma = 2, alpha = 2
+exp_haz <- function(t, lambda = 0.5) {lambda * 1 * t^0}
+weibull_haz_2 <- function(t, lambda = 0.5) lambda * 2 * t^(2 - 1)
+gompertz_haz_2 <- function(t, lambda = 0.5) lambda * exp(2* t)
+
+p1 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
+    geom_path(aes(colour="red"), stat="function", fun=exp_haz)+
+    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_2)+
+    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_2) +
+    scale_colour_identity("Hazard Function", guide="legend", 
+                          labels = c("Exponential", "Weibull(gamma = 2)", "Gompertz (alpha = 2)"), 
+                          breaks = c("red", "green", "blue")) +
+    labs(x = "t",
+         y = "h0(t)") + ylim(0,2)
+
+# gamma = 1.5, alpha = 1.5
+exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz_1.5 <- function(t, lambda = 0.5) lambda * 1.5 * t^(1.5 - 1)
+gompertz_haz_1.5 <- function(t, lambda = 0.5) lambda * exp(1.5* t)
+
+p2 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
+    geom_path(aes(colour="red"), stat="function", fun=exp_haz)+
+    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_1.5)+
+    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_1.5) +
+    scale_colour_identity("Hazard Function", guide="legend", 
+                          labels = c("Exponential", "Weibull(gamma = 1.5)", "Gompertz (alpha = 1.5)"), 
+                          breaks = c("red", "green", "blue")) +
+    labs(x = "t",
+         y = "h0(t)") + ylim(0,2) 
+
+# gamma = 0.05, alpha = 0.05
+exp_haz <- function(t, lambda = 0.5) lambda * 1 * t^0
+weibull_haz_0.05 <- function(t, lambda = 0.5) lambda * 0.05 * t^(0.05 - 1)
+gompertz_haz_0.05 <- function(t, lambda = 0.5) lambda * exp(0.05 * t)
+
+p3 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
+    geom_path(aes(colour="red"), stat="function", fun=exp_haz) +
+    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_0.05) +
+    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_0.05) +
+    scale_colour_identity("Hazard Function", guide="legend", 
+                          labels = c("Exponential", "Weibull(gamma = 0.05)", "Gompertz (alpha = 0.05)"), 
+                          breaks = c("red", "green", "blue")) +
+    labs(x = "t",
+         y = "h0(t)") + ylim(0,2) 
+
+(p1/p2/p3)
+```
+

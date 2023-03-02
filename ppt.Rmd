@@ -13,13 +13,118 @@ knitr::opts_chunk$set(echo = FALSE)
 if (packageVersion('rmarkdown') <= '1.9') {
   install.packages('rmarkdown')  # update rmarkdown from CRAN
 }
+library(knitr)
+library(kableExtra)
 ```
+## Background
+
+
+## Methodology
+Survival function measures the probability of observing individual survival time $T$ beyond a certain time $t$\
+$S(t) = Pr(T>t) = \int_t^{\infty}f(s) ds$\
+Cumulative Distribution Function of survival time T\
+$F(t) = Pr(T \leq t) = 1 - S(t) = 1 - \int_t^{\infty}f(s) ds$\
+Hazard Function\
+$h(t) = \displaystyle{\lim_{\Delta_t \to 0}}\frac{Pr((T\in(t,t+\Delta_t)|T>t)}{\Delta_t} = \frac{f(t)}{S(t)}$ \
+
+
+## ...
+Proportional hazard model is the primary regression model to investigate the effectiveness of treatment $X$ over survival time T, where the i-th patient at a time t \
+is\
+$h_i(t) = h_0(t)e^{x_i\beta}$\
+where\
+- $h_0$ the baseline hazard function\
+- $x_i$ is the treatment indicator variable (control = 0, treatment = 1)\
+- $\beta$ is the log hazard ratio of treatment effect\
+
+Cumulative Hazard Function\
+$H(t) = \int_t^{\infty}h(t)dt = \int_t^{\infty}h_0(t)e^{X\beta}dt = H_0(t)e^{X\beta}$\
+where\
+- $H_0(t)$ is the cumulative baseline risk\
+
+
+ 
+
+
+
+## ...
+
+The proportional hazard can be expressed as \
+\
+$\frac{h(t|x_0)}{h(t|x_1)} = e^{\beta({x_0-x_1})}$\
+
+Derive survival time T \
+\
+$H(t)=-\log{(S(t))}$\
+$S(t)=e^{-H(t)}=e^{\int_t^\infty h(s)ds}$\
+
+By Inverse Transformation Method\
+
+$T = F^{-1}(U) = H_0^{-1}(\frac{-\log{(U)}}{e^{X\beta}})$\
+where $U\sim U(0,1)$\
+
+## ...
+
+$T = F^{-1}(U) = H_0^{-1}(\frac{-\log{(U)}}{e^{X\beta}})$\
+where $U\sim U(0,1)$\
+\
+In our simulation, we will consider three types of data: \
+Exponential, Weibull, and Gompertz\
+
+Apply Inverse transformation method, obtain the following table\
+
+## ...
+**Generate data**\
+1. Define Random Variable $X$, treatment, from a binomial distribution with $p=0.5$\
+2. Generate survival time $T$, time to event, using $X$ and $\beta$\
+3. Randomly generate censoring time $C$, from an exponential distribution\
+4. We observe either the survival time T or else the censoring time C. \
+Specifically, we observe the random variable\
+$Y =min(T,C)$\
+Create a status indicator variable (1 = event, 0 = censored)\
+$$
+Status = 
+    \begin{cases}
+      1, & T_{i}\le C_{i} \\
+      0, &  T_{i} > C_{i}
+    \end{cases}
+$$
+\
+**Define true treatment effect and parameter ** \
+1. True treatment effect $\beta = 2$\
+2. 7 different sample size N ranging from 100 to 400 increasing by 50 \
+3. Simulate exponential distribution with $\lambda=0.5$\
+4. Simulate weibull distribution with $\lambda=0.5$ and $\gamma=2$\
+5. Simulate gompertz distribution with $\lambda=0.5$ and $\alpha=2$\
+
+
+## ...
+$\hat{\beta}$\
+\
+$Bias = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)=\frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-2)$\
+$Variance = \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta^{(k)}}-\beta)^2= \frac{1}{k-1}\sum_{i=1}^k\hat{(\beta^{(k)}}-2)^2$\
+$MSE = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-\beta)^2 = \frac{1}{k}\sum_{i=1}^k(\hat{\beta^{(k)}}-2)^2$\
+
+## ...
+Survival function, $S(t)$ is the probability of observing individual survival time T beyond a certain time $t$.\
+
+The Cumulative distribution function of the random variable survival time T, F(t)=Pr(T$\leq$t) is the probability of observing individual survival time T less than a certain time $t$. \
+
+The Hazard function, $h(t)$ is the product of $h_0(t)$ and $r(X, \beta)$, which is defined as the ratio of probability density function of time variable and Survival function\
+
+where $h_0(t)$ is the baseline hazard function, how the hazard function changes as a function of survival time T\
+$r(X, \beta)=exp(X\beta)$ is a function characterize how the hazard function changes as a function of covariate $X_{treatment}$\
+
+Cumulative hazard function i
+
+
 
 ## R Markdown
-
 This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks w ithin the document.
+
+## Slide with Results
 
 ## Slide with Bullets
 
