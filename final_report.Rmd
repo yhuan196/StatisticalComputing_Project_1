@@ -280,6 +280,12 @@ With the true baseline hazard as exponential, the exponential proportional model
 With a weibull baseline hazard, the weibull model provides the most accurate estimation of the treatment effect as expected, with a narrow confidence interval. Cox performs the second best, with a wider confidence interval, but the exponential model significantly deviates from the true beta and its confidence interval  fails to capture the true beta.
 Under the Gompertz baseline hazard, both exponential and weibull proportional models deviate from the true beta and their 95% confidence intervals fail to include the true beta. The cox model, which makes no assumption about the baseline hazard, fits well. 
 
+## Additional Cases
+
+### Mix Distribution
+
+In this case, we tried to 
+
 # Conclusion
 
 In conclusion, using the appropriate baseline hazard result in the best performance. The exponential model is the most restrictive one, with only one parameter $\lambda$, while the Weibull has an additional $\gamma$. The Cox does not specify a certain baseline hazard function, being the most flexible model. 
