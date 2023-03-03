@@ -122,8 +122,7 @@ gompertz_bias <- gompertz_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 7",
-       title="Bias vs Sample size by 3 Survival Models") + 
+  labs(title="Bias vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 gompertz_bias
 ggsave("results/gompertz_bias.pdf", height = 5, width = 8)
@@ -135,8 +134,7 @@ gompertz_var <- gompertz_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 8",
-       title="Variance vs Sample size by 3 Survival Models") + 
+  labs(title="Variance vs Sample size by Survival Models") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 gompertz_var
 ggsave("results/gompertz_var.pdf", height = 5, width = 8)
@@ -148,8 +146,7 @@ gompertz_mse <- gompertz_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 9",
-       title="MSE vs Sample size by 3 Survival Models") + 
+  labs(title="MSE vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 gompertz_mse
 ggsave("results/gompertz_mse.pdf", height = 5, width = 8)
@@ -234,8 +231,7 @@ exponential_bias <- exponential_table %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 1",
-       title="Bias vs Sample size by 3 Survival Model") + 
+  labs(title="Bias vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 exponential_bias
 ggsave("results2/exponential_bias.pdf", height = 5, width = 8)
@@ -246,8 +242,7 @@ exponential_var <- exponential_table %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 2",
-       title="Variance vs Sample size by 3 Survival Model") + 
+  labs(title="Variance vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 exponential_var
 ggsave("results2/exponential_var.pdf", height = 5, width = 8)
@@ -258,8 +253,7 @@ exponential_mse <- exponential_table %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 3",
-       title="MSE vs Sample size by 3 Survival Model") + 
+  labs(title="MSE vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 exponential_mse
 ggsave("results2/exponential_mse.pdf", height = 5, width = 8)
@@ -343,8 +337,7 @@ weibull_bias <- weibull_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 4",
-       title="Bias vs Sample size by 3 Survival Model") + 
+  labs(title="Bias vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 weibull_bias
 ggsave("results2/weibull_bias.pdf", height = 5, width = 8)
@@ -355,8 +348,7 @@ weibull_var <- weibull_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 5",
-       title="Variance vs Sample size by 3 Survival Model") + 
+  labs(title="Variance vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 weibull_var
 ggsave("results2/weibull_var.pdf", height = 5, width = 8)
@@ -367,8 +359,7 @@ weibull_mse <- weibull_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 6",
-       title="MSE vs Sample size by 3 Survival Model") + 
+  labs(title="MSE vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 weibull_mse
 ggsave("results2/weibull_mse.pdf", height = 5, width = 8)
