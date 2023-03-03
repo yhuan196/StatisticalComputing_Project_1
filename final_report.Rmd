@@ -309,12 +309,834 @@ There are still areas that needed for improvements and exploration. Unlike fitte
 
 # References
 
-1.Cox, David R. (1972). “Regression Models and Life-Tables”. Journal of the Royal Statistical Society, Series B. 34 (2): 187–220.
+Cox, David R. (1972). “Regression Models and Life-Tables”. Journal of the Royal Statistical Society, Series B. 34 (2): 187–220.
 
-2.Hosmer, D. W., Lemeshow, S., &amp; May, S. (2008). Applied survival analysis: Regression modeling of time to event data. Wiley.
+Hosmer, D. W., Lemeshow, S., &amp; May, S. (2008). Applied survival analysis: Regression modeling of time to event data. Wiley.
 
-3.James, Gareth, et al. (2021). An Introduction to Statistical Learning: With Applications in R. Springer.
+James, Gareth, et al. (2021). An Introduction to Statistical Learning: With Applications in R. Springer.
 
-# Appendix
+# A First section of Appendix
+
+Simulation use inverse transformation method
+
+```{r, eval = FALSE}
+#library(survival)
+#library(tidyverse)
+#library(gridExtra)
+#library(patchwork)
+#library(ggpubr)
+
+#Define data generate function
+
+simdata = function(n, distribution,b1,lambda, gamma, alpha) {
+  exponential = function(u, x, lambda, b1) {
+    time = -log(u) / (exp(x * b1) * lambda) }  
+  weibull = function(u, x, lambda, gamma, b1) {
+    time = ( -log(u) / (exp(x * b1) * lambda) ) ^ (1 / gamma) }
+  gompertz = function(u, x, lambda, alpha, b1) {
+    time = (1/alpha) * log( 1 - (alpha * log(u) / (lambda * exp(b1 * x))) ) }
+  x = rbinom(n, 1, 0.5)
+  u = runif(n)
+  if (distribution == "exponential") {
+    time = exponential(u, x, lambda, b1) } 
+  else if (distribution == "weibull") {
+    time = weibull(u, x, lambda, gamma,b1) }
+  else { 
+    time = gompertz(u, x, lambda, alpha, b1) } 
+  
+  time[time < 1/365] = 1/365
+  time[time == 1 / 365] = time[time == 1 / 365] + rnorm(length(time[time == 1 / 365]), 0, 1e-4)
+  time = abs(time)
+  e=as.numeric(time<5)
+  time=pmin(time,5)
+  
+  # data set
+  survival_data = data.frame(id=1:n,
+                             time = time,
+                             x = x,
+                             event=e)
+}
 
 
+#Define simulation function parameters
+# * lambda: scale parameter = 0.5
+# * gamma: shape parameter of Weibull baseline hazard function = 2
+# * alpha: shape parameter of Gompertz baseline hazard function = 2
+# * b1: true treatment effect $\beta$ = 2
+# * seed: set to be 2023
+
+lambda <- 0.5
+gamma <- 2
+alpha <- 2
+b1 <- 2
+
+
+#Exponential Distribution Data: Bias, Variance, Mse of three survival models
+##Bias
+
+set.seed(2023)
+simulate = function(sim, n, b1, dist = "exponential") {
+  # Set up coefficient vectors
+  exp_beta = rep(NA, sim)
+  weibull_beta = rep(NA, sim)
+  cox_beta = rep(NA, sim)
+    for (i in 1:sim) {
+      
+      data = simdata(n, distribution = dist,b1, 
+                           lambda, gamma, alpha)
+      
+      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
+                                dist = "exponential") 
+      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
+                            dist = "weibull")
+      fit.cox = coxph(Surv(data$t, data$event) ~ data$x)
+      
+       
+      exp_beta[i] = -fit.exponential$coefficients[-1]
+      weibull_beta[i] = -fit.weibull$coefficients[-1] / fit.weibull$scale
+      cox_beta[i] = fit.cox$coefficients[1]
+      
+    }
+  
+  coef = tibble(exp = exp_beta,
+                weibull = weibull_beta,
+                cox=cox_beta)
+  exp_bias = (sum(exp_beta - b1)) / sim
+  weibull_bias = (sum(weibull_beta - b1)) / sim
+  cox_bias = (sum(cox_beta - b1)) / sim
+  
+  exp_var=var(exp_beta)
+  weibull_var=var(weibull_beta)
+  cox_var=var(cox_beta)
+  
+  exp_mse=(sum((exp_beta - b1)^2)) / sim
+  weibull_mse=(sum((weibull_beta - b1)^2)) / sim
+  cox_mse=(sum((cox_beta - b1)^2)) / sim
+  
+  char = tibble(model = c("exp", "weibull","cox"),
+                bias=c(exp_bias,weibull_bias,cox_bias))
+  
+  results = list(coef, char)
+  names(results) = c("coefficients", "performance")
+  return(results)
+  #return(coef)
+  
+}
+
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1, 
+                                                        dist = "exponential")$performance),
+                output = map(.x = output, ~mutate(.x)))
+temp1 = sim_results %>% unnest(output) 
+ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Bias vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+ggsave(file="results/exponential_bias.pdf",width=8,height=5)
+ggsave(file="graphs/2.png",width=8,height=5)
+
+
+#Variance of three model using Exponential distribution survival data
+
+set.seed(2023)
+simulate = function(sim, n, b1, dist = "weibull") {
+  # Set up coefficient vectors
+  exp_beta = rep(NA, sim)
+  weibull_beta = rep(NA, sim)
+  cox_beta = rep(NA, sim)
+    for (i in 1:sim) {
+      
+      data = simdata(n, distribution = dist, b1, 
+                           lambda, gamma, alpha )
+      
+      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
+                                dist = "exponential") 
+      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
+                            dist = "weibull")
+      fit.cox = coxph(Surv(data$t, data$event) ~ data$x)
+      
+       
+      exp_beta[i] = -fit.exponential$coefficients[-1]
+      weibull_beta[i] = -fit.weibull$coefficients[-1] / fit.weibull$scale
+      cox_beta[i] = fit.cox$coefficients[1]
+      
+    }
+  
+  coef = tibble(exp = exp_beta,
+                weibull = weibull_beta,
+                cox=cox_beta)
+  exp_bias = (sum(exp_beta - b1)) / sim
+  weibull_bias = (sum(weibull_beta - b1)) / sim
+  cox_bias = (sum(cox_beta - b1)) / sim
+  
+  exp_var=var(exp_beta)
+  weibull_var=var(weibull_beta)
+  cox_var=var(cox_beta)
+  
+  exp_mse=(sum((exp_beta - b1)^2)) / sim
+  weibull_mse=(sum((weibull_beta - b1)^2)) / sim
+  cox_mse=(sum((cox_beta - b1)^2)) / sim
+  
+  char = tibble(model = c("exp", "weibull","cox"),
+                var=c(exp_var,weibull_var,cox_var))
+  
+  results = list(coef, char)
+  names(results) = c("coefficients", "performance")
+  return(results)
+  #return(coef)
+  
+}
+
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1, 
+                                                        dist = "exponential")$performance),
+                output = map(.x = output, ~mutate(.x)))
+temp1 = sim_results %>% unnest(output) 
+ggplot(temp1, aes(x = sample_size, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Variance vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+ggsave(file="results/exponential_var.pdf",width=8,height=5)
+ggsave(file="graphs/1.png",width=8,height=5)
+
+##MSE
+
+set.seed(2023)
+simulate = function(sim, n, b1, dist = "exponential") {
+  # Set up coefficient vectors
+  exp_beta = rep(NA, sim)
+  weibull_beta = rep(NA, sim)
+  cox_beta = rep(NA, sim)
+    for (i in 1:sim) {
+      
+      data = simdata(n, distribution = dist, b1, 
+                           lambda, gamma, alpha)
+      
+      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
+                                dist = "exponential") 
+      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
+                            dist = "weibull")
+      fit.cox = coxph(Surv(data$t, data$event) ~ data$x)
+      
+       
+      exp_beta[i] = -fit.exponential$coefficients[-1]
+      weibull_beta[i] = -fit.weibull$coefficients[-1] / fit.weibull$scale
+      cox_beta[i] = fit.cox$coefficients[1]
+      
+    }
+  
+  coef = tibble(exp = exp_beta,
+                weibull = weibull_beta,
+                cox=cox_beta)
+  exp_bias = (sum(exp_beta - b1)) / sim
+  weibull_bias = (sum(weibull_beta - b1)) / sim
+  cox_bias = (sum(cox_beta - b1)) / sim
+  
+  exp_var=var(exp_beta)
+  weibull_var=var(weibull_beta)
+  cox_var=var(cox_beta)
+  
+  exp_mse=(sum((exp_beta - b1)^2)) / sim
+  weibull_mse=(sum((weibull_beta - b1)^2)) / sim
+  cox_mse=(sum((cox_beta - b1)^2)) / sim
+  
+  char = tibble(model = c("exp", "weibull","cox"),
+                mse=c(exp_mse,weibull_mse,cox_mse))
+  
+  results = list(coef, char)
+  names(results) = c("coefficients", "performance")
+  return(results)
+  #return(coef)
+  
+}
+
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1, 
+                                                        dist = "exponential")$performance),
+                output = map(.x = output, ~mutate(.x)))
+temp1 = sim_results %>% unnest(output) 
+ggplot(temp1, aes(x = sample_size, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="MSE vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+ggsave(file="results/exponential_mse.pdf",width=8,height=5)
+ggsave(file="graphs/3.png",width=8,height=5)
+
+
+
+
+
+#Weibull Distribution Data: Bias, Variance, Mse of three survival models
+##Bias
+set.seed(2023)
+simulate = function(sim, n, b1, dist = "weibull") {
+  # Set up coefficient vectors
+  exp_beta = rep(NA, sim)
+  weibull_beta = rep(NA, sim)
+  cox_beta = rep(NA, sim)
+    for (i in 1:sim) {
+      
+      data = simdata(n, distribution = dist, b1, 
+                           lambda, gamma, alpha )
+      
+      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
+                                dist = "exponential") 
+      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
+                            dist = "weibull")
+      fit.cox = coxph(Surv(data$t, data$event) ~ data$x)
+      
+       
+      exp_beta[i] = -fit.exponential$coefficients[-1]
+      weibull_beta[i] = -fit.weibull$coefficients[-1] / fit.weibull$scale
+      cox_beta[i] = fit.cox$coefficients[1]
+      
+    }
+  
+  coef = tibble(exp = exp_beta,
+                weibull = weibull_beta,
+                cox=cox_beta)
+  exp_bias = (sum(exp_beta - b1)) / sim
+  weibull_bias = (sum(weibull_beta - b1)) / sim
+  cox_bias = (sum(cox_beta - b1)) / sim
+  
+  exp_var=var(exp_beta)
+  weibull_var=var(weibull_beta)
+  cox_var=var(cox_beta)
+  
+  exp_mse=(sum((exp_beta - b1)^2)) / sim
+  weibull_mse=(sum((weibull_beta - b1)^2)) / sim
+  cox_mse=(sum((cox_beta - b1)^2)) / sim
+  
+  char = tibble(model = c("exp", "weibull","cox"),
+                bias=c(exp_bias,weibull_bias,cox_bias))
+  
+  results = list(coef, char)
+  names(results) = c("coefficients", "performance")
+  return(results)
+  #return(coef)
+  
+}
+
+set.seed(2023)
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1, 
+                                                        dist = "weibull")$performance),
+                output = map(.x = output, ~mutate(.x)))
+temp1 = sim_results %>% unnest(output) 
+ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Bias vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+ggsave(file="results/weibull_bias.pdf",width=8,height=5)
+ggsave(file="graphs/5.png",width=8,height=5)
+
+
+##Variance
+
+set.seed(2023)
+simulate = function(sim, n, b1, dist = "weibull") {
+  # Set up coefficient vectors
+  exp_beta = rep(NA, sim)
+  weibull_beta = rep(NA, sim)
+  cox_beta = rep(NA, sim)
+    for (i in 1:sim) {
+      
+      data = simdata(n, distribution = dist, b1, 
+                           lambda, gamma, alpha )
+      
+      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
+                                dist = "exponential") 
+      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
+                            dist = "weibull")
+      fit.cox = coxph(Surv(data$t, data$event) ~ data$x)
+      
+       
+      exp_beta[i] = -fit.exponential$coefficients[-1]
+      weibull_beta[i] = -fit.weibull$coefficients[-1] / fit.weibull$scale
+      cox_beta[i] = fit.cox$coefficients[1]
+      
+    }
+  
+  coef = tibble(exp = exp_beta,
+                weibull = weibull_beta,
+                cox=cox_beta)
+  exp_bias = (sum(exp_beta - b1)) / sim
+  weibull_bias = (sum(weibull_beta - b1)) / sim
+  cox_bias = (sum(cox_beta - b1)) / sim
+  
+  exp_var=var(exp_beta)
+  weibull_var=var(weibull_beta)
+  cox_var=var(cox_beta)
+  
+  exp_mse=(sum((exp_beta - b1)^2)) / sim
+  weibull_mse=(sum((weibull_beta - b1)^2)) / sim
+  cox_mse=(sum((cox_beta - b1)^2)) / sim
+  
+  char = tibble(model = c("exp", "weibull","cox"),
+                var=c(exp_var,weibull_var,cox_var))
+  
+  results = list(coef, char)
+  names(results) = c("coefficients", "performance")
+  return(results)
+  #return(coef)
+  
+}
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1, 
+                                                        dist = "weibull")$performance),
+                output = map(.x = output, ~mutate(.x)))
+temp1 = sim_results %>% unnest(output) 
+ggplot(temp1, aes(x = sample_size, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Variance vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+ggsave(file="results/weibull_var.pdf",width=8,height=5)
+ggsave(file="graphs/4.png",width=8,height=5)
+
+
+##MSE
+
+set.seed(2023)
+simulate = function(sim, n, b1, dist = "weibull") {
+  # Set up coefficient vectors
+  exp_beta = rep(NA, sim)
+  weibull_beta = rep(NA, sim)
+  cox_beta = rep(NA, sim)
+    for (i in 1:sim) {
+      
+      data = simdata(n, distribution = dist,b1, 
+                           lambda, gamma, alpha)
+      
+      fit.exponential = survreg(Surv(data$t, data$event) ~ data$x, 
+                                dist = "exponential") 
+      fit.weibull = survreg(Surv(data$t, data$event) ~ data$x, 
+                            dist = "weibull")
+      fit.cox = coxph(Surv(data$t, data$event) ~ data$x)
+      
+       
+      exp_beta[i] = -fit.exponential$coefficients[-1]
+      weibull_beta[i] = -fit.weibull$coefficients[-1] / fit.weibull$scale
+      cox_beta[i] = fit.cox$coefficients[1]
+      
+    }
+  
+  coef = tibble(exp = exp_beta,
+                weibull = weibull_beta,
+                cox=cox_beta)
+  exp_bias = (sum(exp_beta - b1)) / sim
+  weibull_bias = (sum(weibull_beta - b1)) / sim
+  cox_bias = (sum(cox_beta - b1)) / sim
+  
+  exp_var=var(exp_beta)
+  weibull_var=var(weibull_beta)
+  cox_var=var(cox_beta)
+  
+  exp_mse=(sum((exp_beta - b1)^2)) / sim
+  weibull_mse=(sum((weibull_beta - b1)^2)) / sim
+  cox_mse=(sum((cox_beta - b1)^2)) / sim
+  
+  char = tibble(model = c("exp", "weibull","cox"),
+                mse=c(exp_mse,weibull_mse,cox_mse))
+  
+  results = list(coef, char)
+  names(results) = c("coefficients", "performance")
+  return(results)
+  #return(coef)
+  
+}
+
+sim_results = 
+  tibble(sample_size = c(100,150,200,250,300,350,400)) %>% 
+  mutate(
+    output= map(.x = sample_size, ~simulate(sim = 1000, n = .x, b1, 
+                                                        dist = "weibull")$performance),
+                output = map(.x = output, ~mutate(.x)))
+temp1 = sim_results %>% unnest(output) 
+ggplot(temp1, aes(x = sample_size, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="MSE vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+ggsave(file="results/weibull_mse.pdf",width=8,height=5)
+ggsave(file="graphs/6.png",width=8,height=5)
+```
+
+
+# B Second section of Appendix
+
+Simulation use `simsurv`
+
+```{r, eval = FALSE}
+#library(simsurv)
+#library(survival)
+#library(tidyverse)
+#library(ggplot2)
+#install.packages("tidyr")
+#library(tidyr)
+#install.packages("flexsurv")
+#library(flexsurv)
+
+
+#Project 1: Design a simulation study to compare three survival models
+#Plot of Baseline Hazard Function
+#parameter and seed
+set.seed(2023)
+
+#gamma = 2, alpha = 2
+exp_haz <- function(t, lambda = 0.5) {lambda * 1 * t^0}
+weibull_haz_2 <- function(t, lambda = 0.5) lambda * 2 * t^(2 - 1)
+gompertz_haz_2 <- function(t, lambda = 0.5) lambda * exp(2* t)
+
+p1 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) + 
+    geom_path(aes(colour="red"), stat="function", fun=exp_haz)+
+    geom_path(aes(colour="green"), stat="function", fun=weibull_haz_2)+
+    geom_path(aes(colour="blue"), stat="function", fun=gompertz_haz_2) +
+    scale_colour_identity("Hazard Function", guide="legend", 
+                          labels = c("Exponential", "Weibull(gamma = 2)", "Gompertz (alpha = 2)"), 
+                          breaks = c("red", "green", "blue")) +
+    labs(x = "t",
+         y = "h0(t)") + ylim(0,2)
+p1
+
+
+
+
+
+#Simulation for Gompertz Baseline Hazard Function
+
+# - N: sample size 100, 150, 200, 250, 300, 350, 400
+# - m: simulation time 1000
+# - $\beta$: true treatment effect to be 2
+# - $\lambda$: 0.5
+# - $\alpha$: 2 ($\gamma$ in following function represent the shape parameter of gompertz)
+
+#write a fn to simulate gompertz data
+sim_gompertz <- function(k, gamma, N){
+  #generate gompertz data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1, 0.5))
+  dat <- simsurv(dist = "gompertz",
+                 lambdas = 0.5, 
+                 gammas = gamma, 
+                 betas = c(trt = 2), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  #fit models
+  fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
+  fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
+  fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = dat)
+  
+  #extract beta
+  result <- tibble(exp_beta = c(-fit.exponential$coefficients[-1]), 
+                  weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$coefficients), 
+                  dist = "gompertz",
+                  beta = 2, 
+                  gamma = gamma,
+                  N = N)
+  return(result)
+  }
+
+# Set seed for reproducibility
+set.seed(2023)
+
+# Create empty dataframe to store results
+sim_gompertz_result4 <- data.frame()
+
+#gamma=2
+set.seed(2023)
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_gompertz(gamma = 2, N = n)
+  sim_gompertz_result4  <- rbind(sim_gompertz_result4 , sim_res)
+}
+}
+
+gompertz_table4 <- sim_gompertz_result4  %>% 
+  group_by(N) %>%
+  summarize(mse_exp = mean((exp_beta-2)^2),
+            mse_weibull = mean((weibull_beta-2)^2),
+            mse_cox = mean((cox_beta-2)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta-2),
+            bias_weibull = mean(weibull_beta-2),
+            bias_cox = mean(cox_beta-2)
+        
+  ) 
+gompertz_table4  
+gompertz_table4 <- gompertz_table4 %>% 
+  pivot_longer(mse_exp:bias_cox, values_to = "performance", names_to = "method") %>% separate_wider_delim(method, "_", names = c("method", "model")) %>%
+  pivot_wider(names_from = method, values_from = performance)
+gompertz_table4
+write.csv(gompertz_table4,"table/gompertz_result_table4.csv")
+
+##Models comparison: Bias of three models using Gompertz data 
+gompertz_bias <- gompertz_table4 %>% 
+  ggplot(aes(x = N, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Bias vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+gompertz_bias
+ggsave("results/gompertz_bias.pdf", height = 5, width = 8)
+ggsave("results2/gompertz_bias.pdf", height = 5, width = 8)
+
+##Models comparison: Variance of three models using Gompertz data 
+gompertz_var <- gompertz_table4 %>% 
+  ggplot(aes(x = N, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Variance vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+gompertz_var
+ggsave("results/gompertz_var.pdf", height = 5, width = 8)
+ggsave("results2/gompertz_var.pdf", height = 5, width = 8)
+
+##Models comparison: Variance of three models using Gompertz data 
+gompertz_mse <- gompertz_table4 %>% 
+  ggplot(aes(x = N, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="MSE vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+gompertz_mse
+ggsave("results/gompertz_mse.pdf", height = 5, width = 8)
+ggsave("results2/gompertz_mse.pdf", height = 5, width = 8)
+
+
+
+#Simulation for Exponential Baseline Hazard Function
+
+# - N: sample size 100, 150, 200, 250, 300, 350, 400
+# - m: simulation time 1000
+# - $\beta$: true treatment effect to be 2
+# - $\lambda$: 0.5
+
+#write a fn to simulate exponential data
+sim_exp <- function(k, N){
+  #generate exponential data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1, 0.5))
+  dat <- simsurv(dist = "exponential",
+                 lambdas = 0.5, 
+                 betas = c(trt = 2), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  #fit models
+  fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
+  fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
+  fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = dat)
+  
+  #extract beta
+  result <- tibble(exp_beta = c(-fit.exponential$coefficients[-1]), 
+                  weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$coefficients), 
+                  dist = "exponential",
+                  beta = 2, 
+                  gamma = "default",
+                  N = N)
+  return(result)
+  }
+
+#Set seed for reproducibility
+set.seed(2023)
+
+#Create empty dataframe to store results
+sim_exp_result1  <- data.frame()
+
+#Simulate 1000 times
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_exp(N = n)
+  sim_exp_result1 <- rbind(sim_exp_result1, sim_res)
+}
+}
+
+exponential_table <- sim_exp_result1 %>% 
+  group_by(N) %>%
+  summarize(mse_exp = mean((exp_beta-2)^2),
+            mse_weibull = mean((weibull_beta-2)^2),
+            mse_cox = mean((cox_beta-2)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta-2),
+            bias_weibull = mean(weibull_beta-2),
+            bias_cox = mean(cox_beta-2)
+        
+  )
+
+exponential_table
+
+exponential_table <- exponential_table %>% 
+  pivot_longer(mse_exp:bias_cox, values_to = "performance", names_to = "method") %>% separate_wider_delim(method, "_", names = c("method", "model")) %>%
+  pivot_wider(names_from = method, values_from = performance)
+exponential_table
+write.csv(exponential_table,"table/exponential_result_table.csv")
+
+##Models comparison: Variance of three models using exponential data 
+exponential_bias <- exponential_table %>% 
+  ggplot(aes(x = N, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Bias vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+exponential_bias
+ggsave("results2/exponential_bias.pdf", height = 5, width = 8)
+
+##Models comparison: Variance of three models using exponential data 
+exponential_var <- exponential_table %>% 
+  ggplot(aes(x = N, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Variance vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+exponential_var
+ggsave("results2/exponential_var.pdf", height = 5, width = 8)
+
+##Models comparison: MSE of three models using exponential data 
+exponential_mse <- exponential_table %>% 
+  ggplot(aes(x = N, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="MSE vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+exponential_mse
+ggsave("results2/exponential_mse.pdf", height = 5, width = 8)
+
+
+
+#Simulation for Weibull Baseline Hazard Function
+
+# - N: sample size 100, 150, 200, 250, 300, 350, 400
+# - m: simulation time 1000
+# - $\beta$: true treatment effect to be 2
+# - $\lambda$: 0.5
+# - $\gamma = \alpha$: 2
+
+#write a fn to simulate weibull data
+sim_weibull <- function(k, gamma, N){
+  #generate weibull data
+  covs <- data.frame(id = 1:N,
+                    trt = stats::rbinom(N, 1, 0.5))
+  dat <- simsurv(dist = "weibull",
+                 lambdas = 0.5, 
+                 gammas = gamma, 
+                 betas = c(trt = 2), 
+                 x = covs, 
+                 maxt = 5)
+  dat <- merge(covs, dat)
+  #fit models
+  fit.exponential <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "exponential")
+  fit.weibull <- survreg(Surv(eventtime, status) ~ trt, data = dat, dist = "weibull")
+  fit.cox <- coxph(Surv(eventtime, status) ~ trt, data = dat)
+  
+  #extract beta
+  result <- tibble(exp_beta = c(-fit.exponential$coefficients[-1]), 
+                  weibull_beta = c(-fit.weibull$coefficients[-1])/fit.weibull$scale,
+                  cox_beta = c(fit.cox$coefficients), 
+                  dist = "weibull",
+                  beta = 2, 
+                  gamma = gamma,
+                  N = N)
+  return(result)
+  }
+
+#Set seed for reproducibility
+set.seed(2023)
+
+#Create empty dataframe to store results
+sim_weibull_result4 <- data.frame()
+
+#gamma=2
+for (n in c(100, 150, 200, 250, 300, 350, 400)) {
+for (i in 1:1000) {
+  sim_res <- sim_weibull(gamma = 2, N = n)
+  sim_weibull_result4 <- rbind(sim_weibull_result4, sim_res)
+}
+}
+
+weibull_table4 <- sim_weibull_result4 %>% 
+  group_by(N) %>%
+  summarize(mse_exp = mean((exp_beta-2)^2),
+            mse_weibull = mean((weibull_beta-2)^2),
+            mse_cox = mean((cox_beta-2)^2),
+            var_exp = var(exp_beta),
+            var_weibull = var(weibull_beta),
+            var_cox = var(cox_beta),
+            bias_exp = mean(exp_beta-2),
+            bias_weibull = mean(weibull_beta-2),
+            bias_cox = mean(cox_beta-2)
+        
+  )
+weibull_table4 <- weibull_table4 %>% 
+  pivot_longer(mse_exp:bias_cox, values_to = "performance", names_to = "method") %>% separate_wider_delim(method, "_", names = c("method", "model")) %>%
+  pivot_wider(names_from = method, values_from = performance)
+weibull_table4
+write.csv(weibull_table4,"table/weibull_result_table4.csv")
+
+
+##Models comparison: Bias of three models using weibull data 
+weibull_bias <- weibull_table4 %>% 
+  ggplot(aes(x = N, y = bias, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Bias vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_bias
+ggsave("results2/weibull_bias.pdf", height = 5, width = 8)
+
+##Models comparison: Variance of three models using weibull data 
+weibull_var <- weibull_table4 %>% 
+  ggplot(aes(x = N, y = var, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="Variance vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_var
+ggsave("results2/weibull_var.pdf", height = 5, width = 8)
+
+##Models comparison: MSE of three models using weibull data 
+weibull_mse <- weibull_table4 %>% 
+  ggplot(aes(x = N, y = mse, color = model)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  xlab("sample size") +
+  labs(title="MSE vs Sample size by Survival Model") + 
+  theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
+weibull_mse
+ggsave("results2/weibull_mse.pdf", height = 5, width = 8)
+```
