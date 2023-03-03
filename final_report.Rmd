@@ -276,8 +276,8 @@ knitr::include_graphics("graphs/table.png")
 Table 1
 \end{center}
 
-With the true baseline hazard as exponential, the exponential proportional model has a narrower  confidence interval  than the other 2 models, and all contain the true beta.
-With a weibull baseline hazard, the weibull model provides the most accurate estimation of the treatment effect as expected, with a narrow confidence interval. Cox performs the second best, with a wider confidence interval, but the exponential model significantly deviates from the true beta and its confidence interval  fails to capture the true beta.
+With the true baseline hazard as exponential, the exponential proportional model has a narrower confidence interval than the other 2 models, and all contain the true beta.
+With a weibull baseline hazard, the weibull model provides the most accurate estimation of the treatment effect as expected, with a narrow confidence interval. Cox performs the second best, with a wider confidence interval, but the exponential model significantly deviates from the true treatment and its confidence interval fails to capture the true beta.
 Under the Gompertz baseline hazard, both exponential and weibull proportional models deviate from the true beta and their 95% confidence intervals fail to include the true beta. The cox model, which makes no assumption about the baseline hazard, fits well. 
 
 ## Additional Cases
@@ -298,7 +298,7 @@ Figure 10
 # Conclusion
 
 In conclusion, using the appropriate baseline hazard result in the best performance. The exponential model is the most restrictive one, with only one parameter $\lambda$, while the Weibull has an additional $\gamma$. The Cox does not specify a certain baseline hazard function, being the most flexible model. 
-Exponential models tend to have high bias and low variance, in other words, they have lower prediction accuracy and higher efficiency when compared to the other two models. In contrast, the cox model is the most robust and flexible one, it can fit to any kinds of distribution, especially when sample size is large. Apparently, the cox model performed well under scenario 2 and 3. However,cox model also has its weakness in the case of a exponential baseline hazard function as we saw in Scenario 1. We noticed that Cox models needed a large sample size (greater than 300) to perform well.
+Exponential models tend to have high bias and low variance, in other words, they have lower prediction accuracy and higher efficiency when compared to the other two models. In contrast, the cox model is the most robust and flexible one, it can fit to any kinds of distribution, especially when sample size is large. Apparently, the cox model performed well under scenario 2 and 3. However,cox model also has its weakness in the case of an exponential baseline hazard function as we saw in Scenario 1. We noticed that Cox models needed a large sample size (greater than 300) to perform well.
 
 There are still areas that needed for improvements and exploration. Unlike fitted $\alpha$, $\gamma$, and $\beta$, there is possibilities that the results may vary for different values of the above parameters. Moreover, in our study, we only included one categorical variable, which is the treatment assignment. In real world situations, there also exists other categorical variables, for example, sex that might affect the survival time.
 
