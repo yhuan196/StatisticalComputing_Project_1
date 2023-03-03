@@ -160,7 +160,7 @@ gompertz_var <- gompertz_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(title="Variance vs Sample size by Survival Models") + 
+  labs(title="Variance vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 gompertz_var
 ```
