@@ -315,6 +315,10 @@ Hosmer, D. W., Lemeshow, S., &amp; May, S. (2008). Applied survival analysis: Re
 
 James, Gareth, et al. (2021). An Introduction to Statistical Learning: With Applications in R. Springer.
 
+# Contributions
+
+Jingchen Chai: designed simulation functions, performed Exponential and Mixture simulations, created beta plots, performed CI for estimated treatment effect, and wrote the results discussion and conclusion section of the final report. Yi Huang: designed Gompertz and Gamma simulations, double-checked the results using the simsurv package, created result tables as CSV output, edited the formula table, wrote formulas and methodology in the final report, and formatted the final report.Ruihan Zhang: designed Weibull simulation, generated corresponding plots, edited simulation functions and plotting functions, and wrote the introduction and background section of the final report. All team members contributed equally to this project.
+
 # A First section of Appendix
 
 Simulation use inverse transformation method
