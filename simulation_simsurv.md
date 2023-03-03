@@ -28,7 +28,7 @@ p1 <- ggplot(data.frame(x=c(0, 5)), aes(x=x)) +
 p1
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
 
 # Simulation for Gompertz Baseline Hazard Function
 
@@ -143,13 +143,12 @@ gompertz_bias <- gompertz_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 7",
-       title="Bias vs Sample size by 3 Survival Models") + 
+  labs(title="Bias vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 gompertz_bias
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results/gompertz_bias.pdf", height = 5, width = 8)
@@ -161,13 +160,12 @@ gompertz_var <- gompertz_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 8",
-       title="Variance vs Sample size by 3 Survival Models") + 
+  labs(title="Variance vs Sample size by Survival Models") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 gompertz_var
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-2-2.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-2-2.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results/gompertz_var.pdf", height = 5, width = 8)
@@ -179,13 +177,12 @@ gompertz_mse <- gompertz_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 9",
-       title="MSE vs Sample size by 3 Survival Models") + 
+  labs(title="MSE vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 gompertz_mse
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-2-3.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-2-3.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results/gompertz_mse.pdf", height = 5, width = 8)
@@ -302,13 +299,12 @@ exponential_bias <- exponential_table %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 1",
-       title="Bias vs Sample size by 3 Survival Model") + 
+  labs(title="Bias vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 exponential_bias
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/exponential_bias.pdf", height = 5, width = 8)
@@ -319,13 +315,12 @@ exponential_var <- exponential_table %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 2",
-       title="Variance vs Sample size by 3 Survival Model") + 
+  labs(title="Variance vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 exponential_var
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/exponential_var.pdf", height = 5, width = 8)
@@ -336,13 +331,12 @@ exponential_mse <- exponential_table %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 3",
-       title="MSE vs Sample size by 3 Survival Model") + 
+  labs(title="MSE vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 exponential_mse
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/exponential_mse.pdf", height = 5, width = 8)
@@ -443,13 +437,12 @@ weibull_bias <- weibull_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 4",
-       title="Bias vs Sample size by 3 Survival Model") + 
+  labs(title="Bias vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 weibull_bias
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/weibull_bias.pdf", height = 5, width = 8)
@@ -460,13 +453,12 @@ weibull_var <- weibull_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 5",
-       title="Variance vs Sample size by 3 Survival Model") + 
+  labs(title="Variance vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 weibull_var
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-4-2.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-4-2.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/weibull_var.pdf", height = 5, width = 8)
@@ -477,13 +469,12 @@ weibull_mse <- weibull_table4 %>%
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(caption = "Figure 6",
-       title="MSE vs Sample size by 3 Survival Model") + 
+  labs(title="MSE vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 weibull_mse
 ```
 
-<img src="project1_code_files/figure-gfm/unnamed-chunk-4-3.png" style="display: block; margin: auto;" />
+<img src="simulation_simsurv_files/figure-gfm/unnamed-chunk-4-3.png" style="display: block; margin: auto;" />
 
 ``` r
 ggsave("results2/weibull_mse.pdf", height = 5, width = 8)
