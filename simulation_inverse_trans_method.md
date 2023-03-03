@@ -595,7 +595,7 @@ ggplot(temp1, aes(x = sample_size, y = bias, color = model)) +
   geom_point(size = 1) +
   geom_line(size = 1) +
   xlab("sample size") +
-  labs(title="Bias vs Sample size by Survival Models") + 
+  labs(title="Bias vs Sample size by Survival Model") + 
   theme(plot.caption = element_text(hjust = 0.5, size = rel(1.2)))
 ```
 

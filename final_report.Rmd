@@ -36,7 +36,7 @@ library(ggplot2)
 ```
 
 # Abstract
-Survival analysis or time-to-event analysis is commonly used in medical, economics, and engineering research. In survival analysis, each observation unit will be an individual or a patient, the analysis of a variable that corresponds to the time from a defined baseline until the occurrence of an event of interest. The objective of the simulation study is to evaluate the robustness of three survival models against the misspecified baseline hazard functions. To achieve this goal, we assess the accuracy and efficiency of the estimated treatment effects ($\beta$) for each model under various baseline hazard functions. This project will perform simulations to compare the parametric regression model (Exponential and Weibull) to the semi-parametric regression model (Cox) for survival data. We apply the inverse transformation method to generate survival data with censored observations from Exponential, Weibull, Gompertz, and Gamma distributions. Despite the different models, we found
+Survival analysis or time-to-event analysis is commonly used in medical, economics, and engineering research. In survival analysis, each observation unit will be an individual or a patient, the analysis of a variable that corresponds to the time from a defined baseline until the occurrence of an event of interest. The objective of the simulation study is to evaluate the robustness of three survival models against the misspecified baseline hazard functions. To achieve this goal, we assess the accuracy and efficiency of the estimated treatment effects ($\beta$) for each model under various baseline hazard functions. This project will perform simulations to compare the parametric regression model (Exponential and Weibull) to the semi-parametric regression model (Cox) for survival data. We apply the inverse transformation method to generate survival data with censored observations from Exponential, Weibull, Gompertz, and Two-component mixture distributions. Despite the different models, we observed that appropriate baseline hazard results in the best performance.
 
 
 # Introduction
@@ -106,7 +106,7 @@ where $U\sim U(0,1)$
 Thus, we can derive the following table
 
 \begin{center}
-\captionof{table}{Characteristic of Exponential, Weibull and Gompertz distributions}
+\captionof{table}{Characteristic of Exponential, Weibull and Gompertz Distributions}
 \begin{tabular}{|l|l|l|l|}
 \hline 
  & Distribution   \\ \hline
@@ -267,16 +267,20 @@ Figure 9
 
 From above scenarios, we found that for an exponential model, the only case it has the highest prediction accuracy is when the true distribution is a purely exponential. The big difference in performances of exponential models in different distributions shows that it is the least robust against a misspecified distribution. On the other hand, the variance plot shows that the exponential model constantly has the lowest versatility. When the distribution is weibull, both the weibull and cox model performs well. However, when the true distribution is gompertz, only the cox model shows to have the best performance.
 
-Table 1 shows the  95% confidence intervals of three models using 1000 simulations with sample size of 400 and $\beta = 2$.
+Table 2 shows the  95% confidence intervals of three models using 1000 simulations with sample size of 400 and $\beta = 2$.
 
-
-```{r,echo=FALSE,out.width='80%',out.height='130%',fig.align='center'}
-knitr::include_graphics("graphs/table.png")
-```
 \begin{center}
-Table 1
+\captionof{table}{$95\%$ CI of Estimated Treatment Effect from Three Models}
+\begin{tabular}{|l|l|l|l|}
+\hline 
+Model/Distribution & Exponential & Weibull & Gompertz \\ \hline
+Exponential & $(1.80,2.2)$ & $(0.9,1.1)$ & $(1.12,1.39)$ \\ \hline
+Weibull & $(1.79,2.28)$ & $(1.76,2.29)$ & $(1.53,1.98)$ \\ \hline
+Cox & $(1.76,2.31)$ & $(1.74,2.31)$ & $(1.76,2.31)$ \\ \hline
+ 
+\end{tabular}
 \end{center}
-
+\
 With the true baseline hazard as exponential, the exponential proportional model has a narrower confidence interval than the other 2 models, and all contain the true beta.
 With a weibull baseline hazard, the weibull model provides the most accurate estimation of the treatment effect as expected, with a narrow confidence interval. Cox performs the second best, with a wider confidence interval, but the exponential model significantly deviates from the true treatment and its confidence interval fails to capture the true beta.
 Under the Gompertz baseline hazard, both exponential and weibull proportional models deviate from the true beta and their 95% confidence intervals fail to include the true beta. The cox model, which makes no assumption about the baseline hazard, fits well. 
