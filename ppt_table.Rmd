@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## R Markdown
 
 \begin{center}
-\captionof{table}{Characteristic of Exponential, Weibull and Gompertz distributions}
+\captionof{table}{Characteristic of Exponential, Weibull and Gompertz Distributions}
 \begin{tabular}{|l|l|l|l|}
 \hline 
  & Distribution   \\ \hline
@@ -30,9 +30,23 @@ Cumulative Distribution Function & $F(t) = 1-e^{t\lambda e^{X\beta}}$ & $F(t) = 
 Survival Time $T$ & $T=-\frac{log{(U)}}{\lambda e^{X\beta}}$ & $T=(-\frac{log{(U)}}{\lambda e^{X\beta}})^{\frac{1}{\gamma}}$ & $T=\frac{1}{\alpha}log{[1-\frac{\alpha \log{(U)}}{\lambda e^{X\beta}}]}$ \\
  \hline
 
+
 \end{tabular}
 \end{center}
 
+<!-- Cumulative Distribution Function & $F(t) = 1-e^{t\lambda e^{X\beta}}$ & $F(t) = 1-e^{-\lambda t^\gamma e^{X\beta}}$ & $F(t) = 1-e^{-\frac{\lambda}{\alpha}(e^{\alpha}-1)e^{X\beta}}$ -->
 
-Cumulative Distribution Function & $F(t) = 1-e^{t\lambda e^{X\beta}}$ & $F(t) = 1-e^{-\lambda t^\gamma e^{X\beta}}$ & $F(t) = 1-e^{-\frac{\lambda}{\alpha}(e^{\alpha}-1)e^{X\beta}}$
+
+\begin{center}
+\captionof{table}{$95\%$ CI of Estimated Treatment Effect from Three Models}
+\begin{tabular}{|l|l|l|l|}
+\hline 
+Model/Distribution & Exponential & Weibull & Gompertz \\ \hline
+Exponential & $(1.80,2.2)$ & $(0.9,1.1)$ & $(1.12,1.39)$ \\ \hline
+Weibull & $(1.79,2.28)$ & $(1.76,2.29)$ & $(1.53,1.98)$ \\ \hline
+Cox & $(1.76,2.32)$ & $(1.74,2.32)$ & $(1.76,2.31)$ \\ \hline
+ 
+\end{tabular}
+\end{center}
+
 
